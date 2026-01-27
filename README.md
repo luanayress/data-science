@@ -15,14 +15,33 @@ This project develops predictive models to identify customers at risk of churnin
 ## Project Structure
 
 ```
-├── Customer-Churn-Records.csv              # Raw input data
-├── exploratory_analysis.ipynb              # EDA and descriptive statistics
-├── feature_eng.ipynb                       # Feature engineering pipeline (11 sections)
-├── modeling.ipynb                          # Model training and comparison (9 sections)
-├── Customer_Churn_Final_Features.csv       # Engineered features dataset
-├── Customer_Churn_Engineered_Features.csv  # Complete feature engineering output
-├── Feature_Engineering_Report.txt          # Summary report
-└── README.md                               # This file
+├── Customer-Churn-Records.csv                    # Raw input data
+├── exploratory_analysis.ipynb                    # EDA and descriptive statistics
+├── feature_eng.ipynb                             # Feature engineering pipeline (11 sections)
+├── modeling.ipynb                                # Model training and comparison (9 sections)
+├── Customer_Churn_Final_Features.csv             # Engineered features dataset
+├── Customer_Churn_Engineered_Features.csv        # Complete feature engineering output
+├── Feature_Engineering_Report.txt                # Summary report
+│
+├── DEPLOYMENT FILES (New)
+├── app.py                                        # Streamlit dashboard application
+├── model_deployment.py                           # Model serving module
+├── train_and_save.py                             # Model training and persistence script
+├── models/                                       # Saved model artifacts directory
+│   ├── gradient_boosting_model.pkl
+│   ├── scaler_standard.pkl
+│   ├── scaler_minmax.pkl
+│   └── preprocessing_config.pkl
+│
+├── DOCUMENTATION FILES
+├── requirements.txt                              # Python package dependencies
+├── DEPLOYMENT_GUIDE.md                           # Complete deployment setup guide
+├── DEPLOYMENT_INDEX.txt                          # Index and quick navigation
+├── DEPLOYMENT_SUMMARY.txt                        # Deployment package overview
+├── QUICK_REFERENCE.txt                           # One-page cheat sheet
+├── run_dashboard.bat                             # Windows quick launcher
+├── save_models.py                                # Model artifact saving utilities
+└── README.md                                     # This file
 ```
 
 ## Notebooks Description
@@ -141,7 +160,58 @@ This project develops predictive models to identify customers at risk of churnin
 
 ---
 
-## Model Performance Summary
+## 🚀 Deployment & Dashboard
+
+### Streamlit Web Dashboard
+An interactive web dashboard has been created for real-time churn predictions using the trained Gradient Boosting model.
+
+**Features:**
+- **📋 Prediction Tab:** Input customer data and get instant churn predictions
+  - Customer input form (Number of Products, Age, Tenure)
+  - Real-time prediction with confidence score
+  - Probability distribution visualization
+  - Risk level indicator (🔴 High / 🟡 Medium / 🟢 Low)
+  
+- **📊 Analytics Tab:** Model performance and comparison
+  - Individual model metrics (Accuracy, Precision, Recall, F1-Score, ROC-AUC)
+  - Model comparison chart (4 models: LR, RF, GB, Ensemble)
+  - ROC curves for all trained models
+  
+- **ℹ️ About Tab:** Project information
+  - How the prediction system works
+  - Dataset overview and churn rate
+  - Features used in the final model
+  - Model disclaimers and usage notes
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the dashboard
+streamlit run app.py
+
+# Or on Windows, double-click:
+run_dashboard.bat
+```
+
+**Dashboard URL:** http://localhost:8501
+
+### Deployment Files
+- **app.py** - Main Streamlit application with 3-tab interface
+- **model_deployment.py** - Production model serving module with preprocessing
+- **train_and_save.py** - Script to train and persist model artifacts
+- **models/** - Directory containing saved models and scalers (created after training)
+- **requirements.txt** - All Python package dependencies
+- **DEPLOYMENT_GUIDE.md** - Comprehensive setup and deployment instructions
+
+### Model Artifacts (in models/ directory)
+- `gradient_boosting_model.pkl` (555 KB) - Trained Gradient Boosting classifier
+- `scaler_standard.pkl` (1 KB) - StandardScaler for feature normalization
+- `scaler_minmax.pkl` (1.2 KB) - MinMaxScaler for feature scaling
+- `preprocessing_config.pkl` (0.3 KB) - Configuration metadata
+
+---
 
 | Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
 |-------|----------|-----------|--------|----------|---------|
@@ -229,20 +299,52 @@ This project develops predictive models to identify customers at risk of churnin
 
 ## How to Run
 
-1. **Exploratory Analysis:**
-   ```bash
-   jupyter notebook exploratory_analysis.ipynb
-   ```
+### 1. Run Jupyter Notebooks (Analysis & Training)
 
-2. **Feature Engineering:**
-   ```bash
-   jupyter notebook feature_eng.ipynb
-   ```
+**Exploratory Analysis:**
+```bash
+jupyter notebook exploratory_analysis.ipynb
+```
 
-3. **Model Training & Comparison:**
-   ```bash
-   jupyter notebook modeling.ipynb
-   ```
+**Feature Engineering:**
+```bash
+jupyter notebook feature_eng.ipynb
+```
+
+**Model Training & Comparison:**
+```bash
+jupyter notebook modeling.ipynb
+```
+
+### 2. Deploy the Dashboard (Recommended)
+
+**Option A - Command Line:**
+```bash
+# Install dependencies first
+pip install -r requirements.txt
+
+# Run the Streamlit dashboard
+streamlit run app.py
+```
+
+**Option B - Windows Quick Launch (Double-click):**
+Simply double-click `run_dashboard.bat` and the dashboard will open automatically.
+
+**Option C - Full Setup from Scratch:**
+```bash
+# 1. Train and save models
+python train_and_save.py
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Launch dashboard
+streamlit run app.py
+```
+
+**Dashboard Access:**
+- Local: http://localhost:8501
+- Network: http://192.168.2.108:8501 (adjust IP as needed)
 
 ---
 
@@ -258,13 +360,54 @@ This project develops predictive models to identify customers at risk of churnin
 
 ---
 
+## Troubleshooting
+
+### Dashboard Issues
+
+**Port 8501 already in use:**
+```bash
+streamlit run app.py --server.port 8502
+```
+
+**Models not found:**
+- Ensure `train_and_save.py` has been run to create the `models/` directory
+- Check that all `.pkl` files exist in `models/` directory
+- Verify file paths in `model_deployment.py`
+
+**Missing dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+**Permission denied on run_dashboard.bat:**
+- Right-click → Properties → Advanced → Check "Run as administrator"
+- Or run from PowerShell with elevated privileges
+
+For more detailed troubleshooting, see **DEPLOYMENT_GUIDE.md**
+
+---
+
 ## Author Notes
 
-This project demonstrates a complete data science pipeline from raw data to production-ready models, including:
+This project demonstrates a complete end-to-end data science pipeline from raw data to production deployment, including:
+
+**Analysis Phase:**
 - Proper data preprocessing and feature engineering
-- Multicollinearity analysis and handling
+- Multicollinearity analysis and handling via VIF
 - Comprehensive model evaluation and comparison
 - Ensemble method implementation
-- Professional documentation and reporting
 
-The focus on handling class imbalance and multicollinearity reflects real-world data science challenges and best practices.
+**Deployment Phase:**
+- Production-ready model serving module with preprocessing pipeline
+- Interactive Streamlit web dashboard for real-time predictions
+- Model artifact persistence using joblib
+- Comprehensive documentation and deployment guides
+
+**Key Best Practices Demonstrated:**
+- Separation of concerns (model training vs. serving)
+- Stateless prediction API for scalability
+- Error handling and logging for production reliability
+- Session state management for user experience
+- Clear documentation for deployment and troubleshooting
+
+The project showcases real-world data science challenges including class imbalance handling, multicollinearity management, and production-level model deployment.
