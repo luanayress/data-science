@@ -70,7 +70,9 @@ def load_model():
     deployment = st.session_state.deployment
     if not deployment.is_loaded:
         st.error("⚠️ Model artifacts not loaded. Please ensure models directory exists with saved model files.")
+        logger.error("Model artifacts failed to load")
         return False
+    logger.info("Model artifacts loaded successfully")
     return True
 
 
