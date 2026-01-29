@@ -1,0 +1,6 @@
+{
+  "component": "scaler",
+  "type": "StandardScaler",
+  "file": "scaler.joblib",
+  "created_at": "2026-01-28"
+}
