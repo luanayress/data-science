@@ -48,7 +48,7 @@ Status: Complete & Ready for Production
 
 3. 🟡 DEPLOYMENT_GUIDE.md
    ├─ What: Complete setup and deployment guide
-   ├─ Size: ~12 KB
+   ├─ Size: ~20 KB
    ├─ Read if: You want comprehensive instructions
    ├─ Time: 20 minutes
    ├─ Sections: 9 major sections with examples
@@ -63,41 +63,51 @@ Status: Complete & Ready for Production
    ├─ Contains: File relationships, data flow, features
    └─ Next: Reference specific sections as needed
 
-5. 🔵 model_deployment.py
-   ├─ What: Production Python module for model serving
-   ├─ Size: ~8 KB
-   ├─ Purpose: Load models and make predictions
-   ├─ Key Classes:
-   │  └─ ModelDeployment: Main class for all operations
-   ├─ Usage: from model_deployment import ModelDeployment
-   ├─ Comments: ✓ Comprehensive docstrings included
-   └─ Next: Don't modify, used by app.py
+5. � PROJECT STRUCTURE (app/ and src/ directories)
+   ├─ app/ - Application & API layer
+   │  ├─ app.py: Main Streamlit dashboard
+   │  ├─ model_loader.py: Model loading and serving
+   │  └─ schema.py: Data validation schemas
+   ├─ src/ - Core ML modules
+   │  ├─ data/: Data loading and splitting
+   │  ├─ features/: Feature engineering
+   │  ├─ models/: Model training and evaluation
+   │  ├─ pipelines/: End-to-end workflows
+   │  └─ utils/: Config, logging, paths
+   └─ Purpose: Production-ready code organization
 
-6. 🟣 app.py
+6. 🔵 LEGACY FILES (keep for reference)
+   ├─ model_deployment.py (replace with app/model_loader.py)
+   ├─ save_models.py (replace with src/models/train.py)
+   ├─ train_and_save.py (replace with src/pipelines/training_pipeline.py)
+   └─ run_dashboard.bat (replace with: streamlit run app/app.py)
+
+7. 🟣 app/app.py (NEW LOCATION)
    ├─ What: Streamlit dashboard application
    ├─ Size: ~15 KB
    ├─ Purpose: Interactive web UI for predictions
-   ├─ Run: streamlit run app.py
+   ├─ Run: streamlit run app/app.py
    ├─ Features: 3 tabs (Prediction, Analytics, About)
    ├─ Comments: ✓ Inline comments throughout
-   └─ Next: Run with: streamlit run app.py
+   └─ Next: Run with: streamlit run app/app.py
 
-7. 🟤 save_models.py
-   ├─ What: Script to save trained models to disk
-   ├─ Size: ~6 KB
-   ├─ Purpose: Persist models from notebook to production
-   ├─ Usage: Add code from this file to modeling.ipynb
-   ├─ Output: Creates models/ directory with 4 .pkl files
-   ├─ Comments: ✓ Detailed usage instructions included
-   └─ Next: Copy code to modeling.ipynb before deploying
+8. 🟤 app/model_loader.py (NEW LOCATION)
+   ├─ What: Model loading and serving module
+   ├─ Size: ~8 KB
+   ├─ Purpose: Load models from models/v1/ and make predictions
+   ├─ Usage: from app.model_loader import ModelDeployment
+   ├─ Output: Predictions and confidence scores
+   ├─ Comments: ✓ Comprehensive docstrings
+   └─ Next: Used by app/app.py
 
-8. ⚪ requirements.txt
+9. ⚪ requirements.txt (UPDATED)
    ├─ What: Python package dependencies list
    ├─ Size: <1 KB
    ├─ Install: pip install -r requirements.txt
-   ├─ Packages: 7 core packages + optional ones
+   ├─ Packages: Updated for new structure
    ├─ Time to install: ~2 minutes
    ├─ Comments: ✓ Descriptions for each package
+   └─ Next: Run after navigating to project
    └─ Next: Run after cloning/downloading
 
 9. ⬜ run_dashboard.bat
