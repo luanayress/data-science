@@ -10,14 +10,14 @@ import joblib
 import os
 
 # Create models directory
-os.makedirs('models', exist_ok=True)
+os.makedirs('models/v1', exist_ok=True)
 
 print("📦 TRAINING & SAVING MODELS FOR DEPLOYMENT")
 print("=" * 60)
 
 # Load feature-engineered data
 print("\n1️⃣  Loading feature-engineered data...")
-df = pd.read_csv('Customer_Churn_Final_Features.csv')
+df = pd.read_csv('data/processed/Customer_Churn_Final_Features.csv')
 print(f"   ✓ Loaded {len(df)} records with {len(df.columns)} features")
 
 # Prepare features and target
@@ -80,30 +80,30 @@ preprocessing_config = {
 print("\n6️⃣  Saving model artifacts...")
 
 # Save model
-model_path = 'models/gradient_boosting_model.pkl'
+model_path = 'models/v1/model.pkl'
 joblib.dump(gb_model, model_path)
 print(f"   ✓ Model saved: {model_path} ({os.path.getsize(model_path) / (1024*1024):.2f} MB)")
 
 # Save scalers
-scaler_std_path = 'models/scaler_standard.pkl'
+scaler_std_path = 'models/v1/scaler_standard.pkl'
 joblib.dump(scaler_standard, scaler_std_path)
 print(f"   ✓ StandardScaler saved: {scaler_std_path} ({os.path.getsize(scaler_std_path) / 1024:.1f} KB)")
 
-scaler_minmax_path = 'models/scaler_minmax.pkl'
+scaler_minmax_path = 'models/v1/scaler_minmax.pkl'
 joblib.dump(scaler_minmax, scaler_minmax_path)
 print(f"   ✓ MinMaxScaler saved: {scaler_minmax_path} ({os.path.getsize(scaler_minmax_path) / 1024:.1f} KB)")
 
 # Save config
-config_path = 'models/preprocessing_config.pkl'
+config_path = 'models/v1/preprocessing_config.pkl'
 joblib.dump(preprocessing_config, config_path)
 print(f"   ✓ Config saved: {config_path} ({os.path.getsize(config_path) / 1024:.1f} KB)")
 
 print("\n" + "=" * 60)
 print("✅ ALL MODELS SAVED SUCCESSFULLY!")
 print("=" * 60)
-print("\n📁 Models directory contents:")
-for file in sorted(os.listdir('models')):
-    size = os.path.getsize(f'models/{file}')
+print("\n📁 Models v1 directory contents:")
+for file in sorted(os.listdir('models/v1')):
+    size = os.path.getsize(f'models/v1/{file}')
     if size > 1024*1024:
         print(f"   • {file}: {size / (1024*1024):.2f} MB")
     else:

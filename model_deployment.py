@@ -22,7 +22,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Define paths for model artifacts
-MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+# Use current working directory as fallback if __file__ is not reliable
+try:
+    MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+except:
+    MODEL_DIR = os.getcwd()
+
+# Check if we're in the right directory, if not try current working directory
+if not os.path.exists(os.path.join(MODEL_DIR, 'models')):
+    MODEL_DIR = os.getcwd()
+    logger.info(f"Adjusted MODEL_DIR to current working directory: {MODEL_DIR}")
+
 GB_MODEL_PATH = os.path.join(MODEL_DIR, 'models', 'gradient_boosting_model.pkl')
 SCALER_STANDARD_PATH = os.path.join(MODEL_DIR, 'models', 'scaler_standard.pkl')
 SCALER_MINMAX_PATH = os.path.join(MODEL_DIR, 'models', 'scaler_minmax.pkl')
@@ -30,6 +40,9 @@ PREPROCESSING_CONFIG_PATH = os.path.join(MODEL_DIR, 'models', 'preprocessing_con
 
 # Create models directory if it doesn't exist
 os.makedirs(os.path.dirname(GB_MODEL_PATH), exist_ok=True)
+
+logger.info(f"Model directory: {MODEL_DIR}")
+logger.info(f"Model path: {GB_MODEL_PATH}")
 
 
 class ModelDeployment:
@@ -53,12 +66,17 @@ class ModelDeployment:
             bool: True if model loaded successfully, False otherwise
         """
         try:
+            logger.info(f"Looking for model at: {GB_MODEL_PATH}")
             if os.path.exists(GB_MODEL_PATH):
                 self.model = joblib.load(GB_MODEL_PATH)
                 logger.info(f"✓ Gradient Boosting model loaded from {GB_MODEL_PATH}")
                 return True
             else:
                 logger.error(f"✗ Model not found at {GB_MODEL_PATH}")
+                logger.error(f"Current working directory: {os.getcwd()}")
+                logger.error(f"Files in current directory: {os.listdir(os.getcwd())}")
+                if os.path.exists(os.path.join(os.getcwd(), 'models')):
+                    logger.error(f"Files in models directory: {os.listdir(os.path.join(os.getcwd(), 'models'))}")
                 return False
         except Exception as e:
             logger.error(f"✗ Error loading model: {str(e)}")
@@ -194,9 +212,15 @@ class ModelDeployment:
             return None
         
         try:
+            # Convert to numpy array to avoid feature name mismatch warnings
+            if isinstance(input_data, pd.DataFrame):
+                input_array = input_data.values
+            else:
+                input_array = input_data
+            
             # Make predictions
-            prediction = self.model.predict(input_data)[0]
-            prediction_proba = self.model.predict_proba(input_data)[0]
+            prediction = self.model.predict(input_array)[0]
+            prediction_proba = self.model.predict_proba(input_array)[0]
             
             result = {
                 'prediction': int(prediction),

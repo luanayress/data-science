@@ -69,7 +69,14 @@ def load_model():
     """Load model artifacts on first run."""
     deployment = st.session_state.deployment
     if not deployment.is_loaded:
-        st.error("⚠️ Model artifacts not loaded. Please ensure models directory exists with saved model files.")
+        # Show detailed error information
+        st.error("⚠️ Model artifacts not loaded. Troubleshooting information:")
+        st.error(f"- Deployment is_loaded flag: {deployment.is_loaded}")
+        st.error(f"- Model loaded: {deployment.model is not None}")
+        st.error(f"- Scaler standard loaded: {deployment.scaler_standard is not None}")
+        st.error(f"- Scaler minmax loaded: {deployment.scaler_minmax is not None}")
+        st.error(f"- Config loaded: {deployment.preprocessing_config is not None}")
+        st.info("Please ensure the 'models/' directory exists with all required .pkl files in the project root directory.")
         return False
     return True
 
