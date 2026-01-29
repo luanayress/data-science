@@ -15,32 +15,83 @@ This project develops predictive models to identify customers at risk of churnin
 ## Project Structure
 
 ```
-├── Customer-Churn-Records.csv                    # Raw input data
-├── exploratory_analysis.ipynb                    # EDA and descriptive statistics
-├── feature_eng.ipynb                             # Feature engineering pipeline (11 sections)
-├── modeling.ipynb                                # Model training and comparison (9 sections)
-├── Customer_Churn_Final_Features.csv             # Engineered features dataset
-├── Customer_Churn_Engineered_Features.csv        # Complete feature engineering output
-├── Feature_Engineering_Report.txt                # Summary report
+Data Science/
 │
-├── DEPLOYMENT FILES (New)
-├── app.py                                        # Streamlit dashboard application
-├── model_deployment.py                           # Model serving module
-├── train_and_save.py                             # Model training and persistence script
-├── models/                                       # Saved model artifacts directory
-│   ├── gradient_boosting_model.pkl
-│   ├── scaler_standard.pkl
-│   ├── scaler_minmax.pkl
-│   └── preprocessing_config.pkl
+├── app/                                          # Serving / API / Dashboard
+│   ├── app.py                                    # Streamlit dashboard application
+│   ├── model_loader.py                           # Model loading utilities
+│   ├── schema.py                                 # Data validation schemas
+│   └── __init__.py
 │
-├── DOCUMENTATION FILES
-├── requirements.txt                              # Python package dependencies
+├── src/                                          # Core ML Code
+│   ├── data/
+│   │   ├── load_data.py                          # Data loading utilities
+│   │   ├── validation.py                         # Data validation logic
+│   │   └── split.py                              # Train/test splitting
+│   │
+│   ├── features/
+│   │   ├── build_features.py                     # Feature engineering pipeline
+│   │   └── transformers.py                       # Custom transformers
+│   │
+│   ├── models/
+│   │   ├── train.py                              # Model training logic
+│   │   ├── evaluate.py                           # Model evaluation metrics
+│   │   ├── predict.py                            # Prediction functions
+│   │   └── registry.py                           # Model registry/tracking
+│   │
+│   ├── pipelines/
+│   │   ├── training_pipeline.py                  # End-to-end training workflow
+│   │   └── inference_pipeline.py                 # End-to-end inference workflow
+│   │
+│   └── utils/
+│       ├── config.py                             # Configuration management
+│       ├── logger.py                             # Logging utilities
+│       └── paths.py                              # Path utilities
+│
+├── notebooks/                                    # Exploration Only
+│   ├── 01_eda.ipynb                              # Exploratory data analysis
+│   ├── 02_feature_engineering.ipynb              # Feature engineering exploration
+│   └── 03_modeling.ipynb                         # Model development and training
+│
+├── models/                                       # Model Artifacts (Versioned)
+│   └── v1/
+│       ├── model.pkl                             # Trained Gradient Boosting model
+│       ├── scaler.pkl                            # Feature scaler artifacts
+│       └── metadata.json                         # Model metadata and config
+│
+├── data/                                         # Data Directory
+│   ├── raw/                                      # Raw data
+│   │   └── Customer-Churn-Records.csv            # Original customer data
+│   ├── processed/                                # Processed features
+│   │   ├── Customer_Churn_Final_Features.csv     # Final engineered features
+│   │   └── Customer_Churn_Engineered_Features.csv# Complete feature engineering output
+│   └── external/                                 # External data sources
+│
+├── tests/                                        # Automated Tests
+│   ├── test_features.py                          # Feature engineering tests
+│   ├── test_model.py                             # Model tests
+│   └── test_api.py                               # API endpoint tests
+│
+├── configs/                                      # Configuration Files
+│   ├── training.yaml                             # Training configuration
+│   ├── inference.yaml                            # Inference configuration
+│   └── features.yaml                             # Feature configuration
+│
+├── .github/workflows/                            # CI/CD Pipelines
+│   ├── ci.yml                                    # Continuous integration
+│   └── deploy.yml                                # Deployment pipeline
+│
+├── DOCUMENTATION & REFERENCE FILES
+├── Feature_Engineering_Report.txt                # Feature engineering summary
 ├── DEPLOYMENT_GUIDE.md                           # Complete deployment setup guide
 ├── DEPLOYMENT_INDEX.txt                          # Index and quick navigation
 ├── DEPLOYMENT_SUMMARY.txt                        # Deployment package overview
 ├── QUICK_REFERENCE.txt                           # One-page cheat sheet
-├── run_dashboard.bat                             # Windows quick launcher
-├── save_models.py                                # Model artifact saving utilities
+│
+├── Dockerfile                                    # Docker containerization
+├── requirements.txt                              # Python dependencies
+├── pyproject.toml                               # Project metadata and configuration
+├── Makefile                                      # Build and development automation
 └── README.md                                     # This file
 ```
 
