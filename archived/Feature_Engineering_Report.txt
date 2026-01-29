@@ -1,0 +1,44 @@
+
+FEATURE ENGINEERING & MULTICOLLINEARITY HANDLING REPORT
+======================================================================
+
+1. ORIGINAL DATASET
+   - Shape: (10000, 18)
+   - Target Variable: Exited (Churn)
+
+2. FEATURE ENGINEERING
+   - Total Features Created: 43
+   - Engineered Dataset Shape: (10000, 61)
+
+3. FEATURE SELECTION (Mutual Information)
+   - Top Features Selected: 15
+
+4. MULTICOLLINEARITY ANALYSIS
+   - Initial VIF Assessment: 15 features
+   - Features with VIF > 5: 10
+   - Final Features: 5
+
+5. REMOVED FEATURES (High VIF):
+      - Age
+   - Age_Tenure_Interaction
+   - Credit_Age_Interaction
+   - Age_Squared
+   - Age_StandardScaled
+   - Age_Tenure_Interaction_StandardScaled
+   - Credit_Age_Interaction_StandardScaled
+   - Age_Squared_MinMaxScaled
+   - Age_MinMaxScaled
+   - Credit_Age_Interaction_MinMaxScaled
+
+6. FINAL FEATURES FOR MODELING:
+      1. NumOfProducts
+   2. Complain
+   3. Complain_With_Low_Satisfaction
+   4. Age_Squared_StandardScaled
+   5. Age_Tenure_Interaction_MinMaxScaled
+
+7. READY FOR MODELING
+   - Dataset: Customer_Churn_Final_Features.csv
+   - Features: 5
+   - Samples: 10000
+   - All features have VIF < 5 (low multicollinearity)

@@ -1,0 +1,22 @@
+# Feature Configuration
+# This file defines all features used in the model
+
+engineered_features:
+  - Complain
+  - Complain_With_Low_Satisfaction
+  - Age_Squared_StandardScaled
+  - NumOfProducts
+  - Age_Tenure_Interaction_MinMaxScaled
+
+feature_engineering:
+  interaction_features: true
+  polynomial_features: true
+  binning: true
+  
+scaling:
+  standard_scaler: true
+  minmax_scaler: false
+  
+selection:
+  method: SelectKBest
+  k: 5
