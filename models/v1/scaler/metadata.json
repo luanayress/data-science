@@ -1,6 +1,14 @@
 {
   "component": "scaler",
-  "type": "StandardScaler",
-  "file": "scaler.joblib",
-  "created_at": "2026-01-28"
+  "model_type": "ndarray",
+  "features": [
+    "NumOfProducts",
+    "Complain",
+    "Complain_With_Low_Satisfaction",
+    "Age_Squared_StandardScaled",
+    "Age_Tenure_Interaction_MinMaxScaled",
+    "Exited"
+  ],
+  "train_score": null,
+  "saved_at": "2026-02-02T14:34:29.392536Z"
 }
