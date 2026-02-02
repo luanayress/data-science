@@ -21,5 +21,6 @@ joblib>=1.2.0
 scipy>=1.10.0
 statsmodels>=0.13.0
 
-# Optional (for enhanced functionality)
-plotly>=5.14.0  # For interactive plots
+
+# FastAPI file upload support
+python-multipart>=0.0.6

@@ -141,6 +141,10 @@ Thumbs.db
 # models/
 # data/raw/
 # data/processed/
+# Backups and archives
+archived/
+models/*_backup/
+models/v1_backup/
 
 # Local test outputs
 /test_outputs/
