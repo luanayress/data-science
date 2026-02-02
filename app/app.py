@@ -21,7 +21,7 @@ st.set_page_config(
 )
 
 # API Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = "http://localhost:8000" #st.secrets.get("API_URL", "http://localhost:8000")
 
 # Styling
 st.markdown("""

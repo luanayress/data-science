@@ -9,9 +9,10 @@ from ..features.build_features import build_features, get_features_for_modeling
 from ..models.train import train_gradient_boosting, create_preprocessing_pipeline
 from ..models.evaluate import evaluate_model, evaluate_on_train_test
 from ..models.registry import ModelRegistry
-from ..utils.logger import get_logger
+from ..utils.logger import get_logger, setup_logger
 from ..utils.config import load_training_config
 
+setup_logger(__name__)
 logger = get_logger(__name__)
 
 

@@ -23,6 +23,8 @@ class PredictionRequest(BaseModel):
     """Schema for prediction request."""
     
     SeniorCitizen: int = Field(..., ge=0, le=1)
+    Age: int = Field(..., ge=0)
+    NumOfProducts: int = Field(..., ge=0)
     Tenure: int = Field(..., ge=0)
     MonthlyCharges: float = Field(..., gt=0)
     TotalCharges: float = Field(..., ge=0)
@@ -36,10 +38,12 @@ class PredictionRequest(BaseModel):
     Contract: str
     PaymentMethod: str
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "SeniorCitizen": 0,
+                "Age": 45,
+                "NumOfProducts": 2,
                 "Tenure": 24,
                 "MonthlyCharges": 65.5,
                 "TotalCharges": 1570.0,
@@ -54,6 +58,7 @@ class PredictionRequest(BaseModel):
                 "PaymentMethod": "Electronic check"
             }
         }
+    }
 
 
 class PredictionResponse(BaseModel):
@@ -63,14 +68,15 @@ class PredictionResponse(BaseModel):
     probability: float = Field(..., ge=0, le=1, description="Probability of churn")
     confidence: str = Field(..., description="Confidence level: high, medium, low")
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "prediction": 0,
                 "probability": 0.25,
                 "confidence": "high"
             }
         }
+    }
 
 
 class BatchPredictionRequest(BaseModel):
@@ -78,12 +84,14 @@ class BatchPredictionRequest(BaseModel):
     
     data: List[PredictionRequest]
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "data": [
                     {
                         "SeniorCitizen": 0,
+                        "Age": 45,
+                        "NumOfProducts": 2,
                         "Tenure": 24,
                         "MonthlyCharges": 65.5,
                         "TotalCharges": 1570.0,
@@ -100,6 +108,7 @@ class BatchPredictionRequest(BaseModel):
                 ]
             }
         }
+    }
 
 
 class BatchPredictionResponse(BaseModel):
@@ -108,8 +117,8 @@ class BatchPredictionResponse(BaseModel):
     predictions: List[PredictionResponse]
     total_samples: int
     
-    class Config:
-        schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "predictions": [
                     {
@@ -121,11 +130,11 @@ class BatchPredictionResponse(BaseModel):
                 "total_samples": 1
             }
         }
+    }
 
 
 class ModelInfo(BaseModel):
     """Schema for model information."""
-    
     model_type: str
     version: str
     trained_at: Optional[str]
@@ -133,12 +142,34 @@ class ModelInfo(BaseModel):
     f1_score: Optional[float]
     n_features: int
     feature_names: List[str]
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "model_type": "GradientBoostingClassifier",
+                "version": "v1",
+                "trained_at": "2026-01-28T00:00:00Z",
+                "accuracy": 0.87,
+                "f1_score": 0.81,
+                "n_features": 18,
+                "feature_names": ["age", "tenure", "...etc..."]
+            }
+        }
+    }
 
 
 class HealthCheck(BaseModel):
     """Schema for health check response."""
-    
     status: str
     model_loaded: bool
     version: str
     timestamp: str
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "status": "healthy",
+                "model_loaded": True,
+                "version": "v1",
+                "timestamp": "2026-02-02T12:00:00Z"
+            }
+        }
+    }

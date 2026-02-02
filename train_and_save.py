@@ -1,11 +1,14 @@
 """
 Train models from scratch and save them for deployment
 """
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 import joblib
 import os
 
@@ -20,12 +23,20 @@ print("\n1️⃣  Loading feature-engineered data...")
 df = pd.read_csv('data/processed/Customer_Churn_Final_Features.csv')
 print(f"   ✓ Loaded {len(df)} records with {len(df.columns)} features")
 
+
 # Prepare features and target
 print("\n2️⃣  Preparing features and target...")
-features_to_use = ['NumOfProducts', 'Age_Squared_StandardScaled', 'Age_Tenure_Interaction_MinMaxScaled']
-X = df[features_to_use]
+num_features = ['NumOfProducts']
+cat_features = []  # Add categorical features here if needed
+
+# Feature engineering
+df['Age_Squared'] = df['Age'] ** 2
+df['Age_Tenure_Interaction'] = df['Age'] * df['Tenure']
+num_features += ['Age_Squared', 'Age_Tenure_Interaction']
+
+X = df[['NumOfProducts', 'Age_Squared', 'Age_Tenure_Interaction']]
 y = df['Exited']
-print(f"   ✓ Features: {features_to_use}")
+print(f"   ✓ Features: {X.columns.tolist()}")
 print(f"   ✓ Churn distribution: {y.value_counts().to_dict()}")
 
 # Split data
@@ -36,19 +47,24 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"   ✓ Train: {len(X_train)} samples")
 print(f"   ✓ Test: {len(X_test)} samples")
 
-# Scale features
-print("\n4️⃣  Scaling features...")
-scaler_standard = StandardScaler()
-scaler_minmax = MinMaxScaler()
 
-# Fit on training data
-X_train_scaled = scaler_standard.fit_transform(X_train)
-X_test_scaled = scaler_standard.transform(X_test)
-print(f"   ✓ StandardScaler fitted and applied")
+# Build preprocessing pipeline
+print("\n4️⃣  Building preprocessing pipeline...")
+num_pipeline = Pipeline([
+    ("scaler", StandardScaler())
+])
 
-# MinMaxScaler (just for consistency with original pipeline)
-scaler_minmax.fit(X_train)
-print(f"   ✓ MinMaxScaler fitted")
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", num_pipeline, num_features),
+        # ("cat", cat_pipeline, cat_features)  # Add if categorical features exist
+    ]
+)
+
+# Fit preprocessor on training data
+X_train_transformed = preprocessor.fit_transform(X_train)
+print(f"   ✓ Preprocessor fitted and applied")
+
 
 # Train Gradient Boosting model
 print("\n5️⃣  Training Gradient Boosting model...")
@@ -59,44 +75,40 @@ gb_model = GradientBoostingClassifier(
     random_state=42,
     verbose=0
 )
-gb_model.fit(X_train_scaled, y_train)
+gb_model.fit(X_train_transformed, y_train)
 print(f"   ✓ Model trained")
 
+
 # Evaluate
-train_score = gb_model.score(X_train_scaled, y_train)
-test_score = gb_model.score(X_test_scaled, y_test)
+train_score = gb_model.score(X_train_transformed, y_train)
+X_test_transformed = preprocessor.transform(X_test)
+test_score = gb_model.score(X_test_transformed, y_test)
 print(f"   ✓ Train accuracy: {train_score:.4f}")
 print(f"   ✓ Test accuracy: {test_score:.4f}")
 
-# Create preprocessing config
-preprocessing_config = {
-    'features': features_to_use,
-    'churn_rate': float(y.mean()),
-    'feature_mean': X_train.mean().to_dict(),
-    'feature_std': X_train.std().to_dict(),
-}
 
 # Save models
 print("\n6️⃣  Saving model artifacts...")
 
-# Save model
-model_path = 'models/v1/model.pkl'
+# Save preprocessor
+preprocessor_dir = 'models/v1/preprocessor'
+os.makedirs(preprocessor_dir, exist_ok=True)
+preprocessor_path = os.path.join(preprocessor_dir, 'preprocessor.joblib')
+joblib.dump(preprocessor, preprocessor_path)
+print(f"   ✓ Preprocessor saved: {preprocessor_path} ({os.path.getsize(preprocessor_path) / (1024*1024):.2f} MB)")
+
+# Save model in MLOps layout
+model_dir = 'models/v1/model'
+os.makedirs(model_dir, exist_ok=True)
+model_path = os.path.join(model_dir, 'model.joblib')
 joblib.dump(gb_model, model_path)
 print(f"   ✓ Model saved: {model_path} ({os.path.getsize(model_path) / (1024*1024):.2f} MB)")
 
-# Save scalers
-scaler_std_path = 'models/v1/scaler_standard.pkl'
-joblib.dump(scaler_standard, scaler_std_path)
-print(f"   ✓ StandardScaler saved: {scaler_std_path} ({os.path.getsize(scaler_std_path) / 1024:.1f} KB)")
-
-scaler_minmax_path = 'models/v1/scaler_minmax.pkl'
-joblib.dump(scaler_minmax, scaler_minmax_path)
-print(f"   ✓ MinMaxScaler saved: {scaler_minmax_path} ({os.path.getsize(scaler_minmax_path) / 1024:.1f} KB)")
-
-# Save config
-config_path = 'models/v1/preprocessing_config.pkl'
-joblib.dump(preprocessing_config, config_path)
-print(f"   ✓ Config saved: {config_path} ({os.path.getsize(config_path) / 1024:.1f} KB)")
+# Optionally remove old model.pkl if exists
+old_model_pkl = 'models/v1/model.pkl'
+if os.path.exists(old_model_pkl):
+    os.remove(old_model_pkl)
+    print(f"   ✓ Removed old artifact: {old_model_pkl}")
 
 print("\n" + "=" * 60)
 print("✅ ALL MODELS SAVED SUCCESSFULLY!")
