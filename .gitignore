@@ -149,3 +149,4 @@ models/v1_backup/
 # Local test outputs
 /test_outputs/
 *.tmp
+artifacts/
