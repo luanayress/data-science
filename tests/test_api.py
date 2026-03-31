@@ -19,6 +19,8 @@ def test_prediction_request_schema():
     
     valid_data = {
         "SeniorCitizen": 0,
+        "Age": 45,
+        "NumOfProducts": 2,
         "Tenure": 24,
         "MonthlyCharges": 65.5,
         "TotalCharges": 1570.0,
@@ -61,6 +63,8 @@ def test_batch_prediction_request_schema():
         "data": [
             {
                 "SeniorCitizen": 0,
+                "Age": 45,
+                "NumOfProducts": 2,
                 "Tenure": 24,
                 "MonthlyCharges": 65.5,
                 "TotalCharges": 1570.0,

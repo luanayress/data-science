@@ -12,5 +12,5 @@ def test_inference_feature_alignment():
         }
     ])
 
-    df = pipeline.build_features(X)
-    assert set(pipeline.feature_names).issubset(df.columns)
+    df = pipeline.preprocess_data(X)
+    assert list(df.columns) == pipeline.feature_names
