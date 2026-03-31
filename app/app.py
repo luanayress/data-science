@@ -8,6 +8,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime
 import plotly.graph_objects as go
 import plotly.express as px
@@ -21,7 +22,7 @@ st.set_page_config(
 )
 
 # API Configuration
-API_URL = "http://localhost:8000" #st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL") or st.secrets.get("API_URL", "http://localhost:8000")
 
 # Styling
 st.markdown("""
@@ -159,6 +160,8 @@ def show_single_prediction():
     
     with col1:
         senior_citizen = st.selectbox("Senior Citizen", [0, 1], format_func=lambda x: "Yes" if x else "No")
+        age = st.slider("Age", 18, 100, 45)
+        num_of_products = st.selectbox("Number of Products", [1, 2, 3, 4], index=1)
         tenure = st.slider("Tenure (months)", 0, 72, 24)
         monthly_charges = st.number_input("Monthly Charges ($)", 0.0, 200.0, 65.5)
         total_charges = st.number_input("Total Charges ($)", 0.0, 10000.0, 1570.0)
@@ -187,6 +190,8 @@ def show_single_prediction():
     if st.button("🔮 Predict Churn", use_container_width=True, type="primary"):
         customer_data = {
             "SeniorCitizen": senior_citizen,
+            "Age": age,
+            "NumOfProducts": num_of_products,
             "Tenure": tenure,
             "MonthlyCharges": monthly_charges,
             "TotalCharges": total_charges,

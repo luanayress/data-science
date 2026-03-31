@@ -38,6 +38,21 @@ from app.schema import (
 
 logger = get_logger(__name__)
 
+
+def _resolve_allowed_origins() -> list[str]:
+    """Resolve CORS origins from env, defaulting to local development URLs."""
+    origins_raw = os.getenv("ALLOWED_ORIGINS", "")
+    if origins_raw.strip():
+        return [origin.strip() for origin in origins_raw.split(",") if origin.strip()]
+
+    # Safe defaults for local development. Override in production.
+    return [
+        "http://localhost:8501",
+        "http://127.0.0.1:8501",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
 # ---------------------------------------------------------------------
 # FastAPI app
 # ---------------------------------------------------------------------
@@ -50,7 +65,7 @@ app = FastAPI(
 # CORS (Streamlit / frontend friendly)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in production
+    allow_origins=_resolve_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
