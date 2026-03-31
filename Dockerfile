@@ -1,4 +1,4 @@
-# Minimal, production-safe Dockerfile for ML batch training/inference
+# Minimal, production-safe Dockerfile for API serving
 # Use official Python image with deterministic version
 FROM python:3.10-slim
 
@@ -18,9 +18,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source code
 COPY . .
 
-# Entrypoint for batch training (override CMD for inference)
-ENTRYPOINT ["python", "src/pipelines/training_pipeline.py"]
-# For inference, override with: python -m app.app or similar
+# Expose API port
+EXPOSE 8000
 
-# Expose port for API if needed (optional)
-# EXPOSE 8080
+# Default runtime is FastAPI inference server.
+CMD ["python", "-m", "uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8000"]
