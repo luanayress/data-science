@@ -69,19 +69,21 @@ pip install fastapi uvicorn
 These defaults are safe for local and Docker execution.
 
 ```bash
-export MODEL_DIR=artifacts/models
+export MODEL_DIR=models
 export DATA_DIR=data
 export LOG_DIR=logs
 export API_URL=http://localhost:8000
+export ALLOWED_ORIGINS=http://localhost:8501
 ```
 
 On Windows (PowerShell):
 
 ```powershell
-$env:MODEL_DIR="artifacts/models"
+$env:MODEL_DIR="models"
 $env:DATA_DIR="data"
 $env:LOG_DIR="logs"
 $env:API_URL="http://localhost:8000"
+$env:ALLOWED_ORIGINS="http://localhost:8501"
 ```
 
 ---
@@ -101,7 +103,9 @@ python train_and_save.py
 
 Artifacts produced:
 
-* `MODEL_DIR/model_pipeline.joblib`
+* `MODEL_DIR/v1/model/model.joblib`
+* `MODEL_DIR/v1/scaler/scaler.joblib`
+* `MODEL_DIR/v1/model/metadata.json`
 
 ---
 
@@ -157,8 +161,8 @@ docker build -t ml-project .
 
 ```bash
 docker run --rm \
-  -e MODEL_DIR=/artifacts/models \
-  -v $(pwd)/artifacts:/artifacts \
+  -e MODEL_DIR=/models \
+  -v $(pwd)/models:/models \
   ml-project
 ```
 
@@ -166,8 +170,9 @@ docker run --rm \
 
 ```bash
 docker run --rm -p 8000:8000 \
-  -e MODEL_DIR=/artifacts/models \
-  -v $(pwd)/artifacts:/artifacts \
+  -e MODEL_DIR=/models \
+  -e ALLOWED_ORIGINS=http://localhost:8501 \
+  -v $(pwd)/models:/models \
   ml-project \
   python -m uvicorn app.api:app --host 0.0.0.0 --port 8000
 ```
