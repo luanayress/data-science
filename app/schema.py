@@ -20,42 +20,49 @@ class InternetServiceType(str, Enum):
 
 
 class PredictionRequest(BaseModel):
-    """Schema for prediction request."""
+    """Backward-compatible bank churn request.
+
+    Age, Tenure and NumOfProducts remain required for v2/v3. Expanded bank
+    fields are consumed by v4; legacy telecom fields remain optional while
+    clients migrate.
+    """
     
-    SeniorCitizen: int = Field(..., ge=0, le=1)
     Age: int = Field(..., ge=0)
     NumOfProducts: int = Field(..., ge=0)
     Tenure: int = Field(..., ge=0)
-    MonthlyCharges: float = Field(..., gt=0)
-    TotalCharges: float = Field(..., ge=0)
-    InternetService: str
-    OnlineSecurity: str
-    OnlineBackup: str
-    DeviceProtection: str
-    TechSupport: str
-    StreamingTV: str
-    StreamingMovies: str
-    Contract: str
-    PaymentMethod: str
+    CreditScore: Optional[int] = Field(None, ge=0, le=1000)
+    Geography: Optional[str] = None
+    Gender: Optional[str] = None
+    Balance: Optional[float] = Field(None, ge=0)
+    HasCrCard: Optional[int] = Field(None, ge=0, le=1)
+    IsActiveMember: Optional[int] = Field(None, ge=0, le=1)
+    EstimatedSalary: Optional[float] = Field(None, ge=0)
+    SatisfactionScore: Optional[int] = Field(None, ge=1, le=5)
+    CardType: Optional[str] = None
+    PointEarned: Optional[int] = Field(None, ge=0)
+
+    # Deprecated telecom fields retained for API compatibility with v2 clients.
+    SeniorCitizen: Optional[int] = Field(None, ge=0, le=1)
+    MonthlyCharges: Optional[float] = Field(None, gt=0)
+    TotalCharges: Optional[float] = Field(None, ge=0)
+    InternetService: Optional[str] = None
+    OnlineSecurity: Optional[str] = None
+    OnlineBackup: Optional[str] = None
+    DeviceProtection: Optional[str] = None
+    TechSupport: Optional[str] = None
+    StreamingTV: Optional[str] = None
+    StreamingMovies: Optional[str] = None
+    Contract: Optional[str] = None
+    PaymentMethod: Optional[str] = None
     
     model_config = {
         "json_schema_extra": {
             "example": {
-                "SeniorCitizen": 0,
-                "Age": 45,
-                "NumOfProducts": 2,
-                "Tenure": 24,
-                "MonthlyCharges": 65.5,
-                "TotalCharges": 1570.0,
-                "InternetService": "DSL",
-                "OnlineSecurity": "Yes",
-                "OnlineBackup": "No",
-                "DeviceProtection": "No",
-                "TechSupport": "No",
-                "StreamingTV": "No",
-                "StreamingMovies": "No",
-                "Contract": "Month-to-month",
-                "PaymentMethod": "Electronic check"
+                "CreditScore": 650, "Geography": "France", "Gender": "Female",
+                "Age": 45, "Tenure": 5, "Balance": 100000.0,
+                "NumOfProducts": 2, "HasCrCard": 1, "IsActiveMember": 1,
+                "EstimatedSalary": 75000.0, "SatisfactionScore": 3,
+                "CardType": "GOLD", "PointEarned": 500
             }
         }
     }
@@ -89,26 +96,35 @@ class BatchPredictionRequest(BaseModel):
             "example": {
                 "data": [
                     {
-                        "SeniorCitizen": 0,
-                        "Age": 45,
-                        "NumOfProducts": 2,
-                        "Tenure": 24,
-                        "MonthlyCharges": 65.5,
-                        "TotalCharges": 1570.0,
-                        "InternetService": "DSL",
-                        "OnlineSecurity": "Yes",
-                        "OnlineBackup": "No",
-                        "DeviceProtection": "No",
-                        "TechSupport": "No",
-                        "StreamingTV": "No",
-                        "StreamingMovies": "No",
-                        "Contract": "Month-to-month",
-                        "PaymentMethod": "Electronic check"
+                        "CreditScore": 650, "Geography": "France", "Gender": "Female",
+                        "Age": 45, "Tenure": 5, "Balance": 100000.0,
+                        "NumOfProducts": 2, "HasCrCard": 1, "IsActiveMember": 1,
+                        "EstimatedSalary": 75000.0, "SatisfactionScore": 3,
+                        "CardType": "GOLD", "PointEarned": 500
                     }
                 ]
             }
         }
     }
+
+
+class BankPredictionRequest(BaseModel):
+    """Strict input contract for the selected v4 bank feature set."""
+
+    CreditScore: int = Field(..., ge=0, le=1000)
+    Age: int = Field(..., ge=18, le=120)
+    Tenure: int = Field(..., ge=0)
+    Balance: float = Field(..., ge=0)
+    NumOfProducts: int = Field(..., ge=0)
+    HasCrCard: int = Field(..., ge=0, le=1)
+    IsActiveMember: int = Field(..., ge=0, le=1)
+    EstimatedSalary: float = Field(..., ge=0)
+    Geography: str = Field(..., min_length=1)
+    Gender: str = Field(..., min_length=1)
+
+
+class BankBatchPredictionRequest(BaseModel):
+    data: List[BankPredictionRequest]
 
 
 class BatchPredictionResponse(BaseModel):
