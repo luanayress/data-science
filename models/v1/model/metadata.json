@@ -1,17 +1,13 @@
 {
-  "component": "model",
+  "model_name": "model",
   "model_type": "GradientBoostingClassifier",
-  "features": [
-    "NumOfProducts",
-    "Age_Squared_StandardScaled",
-    "Age_Tenure_Interaction_MinMaxScaled"
-  ],
+  "model_file": "model.joblib",
   "feature_names": [
     "NumOfProducts",
     "Age_Squared_StandardScaled",
     "Age_Tenure_Interaction_MinMaxScaled"
   ],
   "n_features": 3,
-  "train_score": 0.8539,
-  "saved_at": "2026-01-28T00:00:00Z"
+  "train_score": 0.853875,
+  "test_score": 0.8325
 }

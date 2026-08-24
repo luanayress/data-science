@@ -1,4 +1,5 @@
-"""
+"""DEPRECATED: legacy v1 generator; use scripts/train_churn.py.
+
 Regenerate models with proper serialization
 """
 import pandas as pd

@@ -1,0 +1,128 @@
+{
+  "name": "churn",
+  "version": "v3",
+  "algorithm": "CalibratedClassifierCV",
+  "base_algorithm": "HistGradientBoosting",
+  "target": "Exited",
+  "raw_features": [
+    "Age",
+    "Tenure",
+    "NumOfProducts"
+  ],
+  "model_features": [
+    "NumOfProducts",
+    "Age_Squared",
+    "Age_Tenure_Interaction"
+  ],
+  "ignored_http_features": [
+    "SeniorCitizen",
+    "MonthlyCharges",
+    "TotalCharges",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaymentMethod"
+  ],
+  "trained_at": "2026-08-24T14:43:50.907426+00:00",
+  "train_rows": 8000,
+  "test_rows": 2000,
+  "random_state": 42,
+  "cv": {
+    "folds": 5,
+    "primary_metric": "average_precision",
+    "results": {
+      "cv_roc_auc_mean": 0.8174437306777358,
+      "cv_roc_auc_std": 0.008590413237040533,
+      "cv_roc_auc_min": 0.8027913147325944,
+      "cv_roc_auc_max": 0.8270759696044533,
+      "cv_pr_auc_mean": 0.5994952145512354,
+      "cv_pr_auc_std": 0.014983699029562793,
+      "cv_pr_auc_min": 0.5816471606593525,
+      "cv_pr_auc_max": 0.6184635738512673,
+      "cv_precision_mean": 0.6717932462030585,
+      "cv_precision_std": 0.012954491137929403,
+      "cv_precision_min": 0.6532663316582915,
+      "cv_precision_max": 0.6839622641509434,
+      "cv_recall_mean": 0.4269938650306749,
+      "cv_recall_std": 0.016277913081498903,
+      "cv_recall_min": 0.3987730061349693,
+      "cv_recall_max": 0.4447852760736196,
+      "cv_f1_mean": 0.5219959651320443,
+      "cv_f1_std": 0.014716700481335714,
+      "cv_f1_min": 0.49523809523809514,
+      "cv_f1_max": 0.5390334572490707,
+      "cv_accuracy_mean": 0.8407500000000001,
+      "cv_accuracy_std": 0.003674234614174774,
+      "cv_accuracy_min": 0.834375,
+      "cv_accuracy_max": 0.845,
+      "fit_time": 0.3287684917449951,
+      "score_time": 0.07404670715332032
+    }
+  },
+  "metrics": {
+    "accuracy": 0.83,
+    "precision": 0.5871794871794872,
+    "recall": 0.5612745098039216,
+    "f1": 0.5739348370927319,
+    "roc_auc": 0.8297115171445462,
+    "pr_auc": 0.6199345515841139,
+    "brier_score": 0.11613955834657654,
+    "log_loss": 0.3737705059900223,
+    "tn": 1431,
+    "fp": 161,
+    "fn": 179,
+    "tp": 229,
+    "specificity": 0.8988693467336684,
+    "fpr": 0.10113065326633164,
+    "fnr": 0.4387254901960784,
+    "predict_time": 0.09544520000000034
+  },
+  "calibration": {
+    "method": "sigmoid",
+    "oof_results": [
+      {
+        "model": "HistGradientBoosting",
+        "calibration": "uncalibrated",
+        "brier_score": 0.11828416047916951,
+        "log_loss": 0.3820243348892442
+      },
+      {
+        "model": "HistGradientBoosting",
+        "calibration": "sigmoid",
+        "brier_score": 0.1181274351528424,
+        "log_loss": 0.3814945392937347
+      },
+      {
+        "model": "HistGradientBoosting",
+        "calibration": "isotonic",
+        "brier_score": 0.1183487462658663,
+        "log_loss": 0.3856639225542503
+      }
+    ]
+  },
+  "thresholds": {
+    "default": 0.5,
+    "balanced": 0.34,
+    "high_recall": 0.21,
+    "high_precision": 0.54,
+    "lowest_cost": 0.17,
+    "high_recall_precision_floor": 0.4493865030674847,
+    "high_precision_recall_floor": 0.4044478527607362
+  },
+  "threshold": 0.34,
+  "selected_threshold": 0.34,
+  "high_confidence_threshold": 0.8,
+  "hyperparameters": {
+    "model__min_samples_leaf": 10,
+    "model__max_leaf_nodes": 7,
+    "model__max_iter": 150,
+    "model__learning_rate": 0.03,
+    "model__l2_regularization": 0.0
+  },
+  "decision": "C \u2014 CREATE V3 AND RECOMMEND PROMOTION"
+}

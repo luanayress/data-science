@@ -1,4 +1,5 @@
-"""
+"""DEPRECATED: legacy v1 artifact writer; use scripts/train_churn.py.
+
 Model Persistence Script
 =========================
 This script saves the trained models, scalers, and preprocessing configuration

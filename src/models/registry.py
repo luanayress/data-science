@@ -24,6 +24,23 @@ class ModelRegistry:
         self.version = version
         self.models_dir = get_models_path(version)
         self.models_dir.mkdir(parents=True, exist_ok=True)
+
+    def save_pipeline(self, pipeline: Any, metadata: Dict) -> Path:
+        """Persist the complete inference pipeline and version metadata."""
+        pipeline_path = self.models_dir / "pipeline.joblib"
+        joblib.dump(pipeline, pipeline_path, compress=0)
+        self._save_metadata(dict(metadata), self.models_dir)
+        logger.info(f"Pipeline saved to {pipeline_path}")
+        return pipeline_path
+
+    def load_pipeline(self) -> Any:
+        """Load the complete inference pipeline for this version."""
+        pipeline_path = self.models_dir / "pipeline.joblib"
+        if not pipeline_path.exists():
+            raise FileNotFoundError(f"Pipeline not found: {pipeline_path}")
+        pipeline = joblib.load(pipeline_path)
+        logger.info(f"Pipeline loaded from {pipeline_path}")
+        return pipeline
     
     def save_model(
         self,

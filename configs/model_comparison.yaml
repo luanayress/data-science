@@ -1,0 +1,11 @@
+experiment:
+  random_state: 42
+  test_size: 0.2
+  cv_folds: 5
+  primary_metric: average_precision
+  calibration_bins: 10
+  cost_false_negative: 5.0
+  cost_false_positive: 1.0
+  output_dir: reports/model-comparison
+  challenger_version: v3
+  n_jobs: 1

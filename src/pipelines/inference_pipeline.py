@@ -1,110 +1,105 @@
-"""Inference pipeline - orchestrates end-to-end prediction workflow."""
+"""Inference over the persisted, fully fitted churn pipeline."""
+
+import os
+from typing import Dict, Optional
 
 import pandas as pd
-import numpy as np
-from typing import Dict
-from sklearn.base import TransformerMixin
-from ..features.build_features import build_features
+
+from ..features.feature_contract import MODEL_FEATURES
 from ..models.registry import ModelRegistry
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
 
 
 class InferencePipeline:
-    """Pipeline for making predictions on new data."""
+    """Load one versioned pipeline and use it unchanged for all predictions."""
 
-    def __init__(self, version: str = "v1"):
+    def __init__(self, version: str = "v2", threshold_profile: Optional[str] = None):
         self.version = version
         self.registry = ModelRegistry(version=version)
-        self.model = None
-        self.scaler = None
-        self.metadata = None
-        self.feature_names = None
-        self._load_artifacts()
+        self.pipeline = self.registry.load_pipeline()
+        self.metadata = self.registry.load_metadata()
+        if not self.metadata:
+            raise ValueError("Missing pipeline metadata for version {}".format(version))
+        self.feature_names = self.metadata.get("model_features", list(MODEL_FEATURES))
+        self.required_input_features = self.metadata.get("raw_features", [])
+        self.strict_input_contract = bool(self.metadata.get("strict_input_contract", False))
+        self.threshold_profile = threshold_profile
+        self.threshold = self._resolve_threshold(threshold_profile)
+        if hasattr(self.pipeline, "named_steps"):
+            self.model = self.pipeline.named_steps["model"]
+            self.scaler = self.pipeline.named_steps["preprocessing"]
+        else:
+            # Calibrated challengers wrap the complete raw-input pipeline.
+            self.model = self.pipeline
+            self.scaler = None
 
-    def _load_artifacts(self) -> None:
-        """Load model, scaler and metadata."""
-        logger.info(f"Loading artifacts from version {self.version}")
-
-        self.model = self.registry.load_model("model")
-        self.scaler = self.registry.load_scaler("scaler")
-        self.metadata = self.registry.load_metadata("model")
-
-        self.feature_names = self.metadata["feature_names"]
-
-        logger.info(
-            f"Artifacts loaded | n_features={len(self.feature_names)} | "
-            f"scaler_type={type(self.scaler)}"
-        )
+    def _resolve_threshold(self, profile: Optional[str]) -> float:
+        if profile is None:
+            return float(self.metadata.get("selected_threshold", self.metadata["threshold"]))
+        thresholds = self.metadata.get("thresholds", {})
+        if not thresholds:
+            return float(self.metadata["threshold"])
+        if profile == "default":
+            return float(thresholds.get("default", self.metadata["threshold"]))
+        if profile not in thresholds:
+            raise ValueError("Threshold profile {!r} is unavailable for model {}".format(profile, self.version))
+        return float(thresholds[profile])
 
     def preprocess_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Build features and prepare final matrix for inference.
-        """
-        logger.info("Preprocessing data for inference")
-
-        # 1. Feature engineering (same as training)
-        features_df = build_features(df)
-
-        # 2. Ensure schema consistency
-        missing = set(self.feature_names) - set(features_df.columns)
-        if missing:
-            raise ValueError(
-                f"Missing required features for inference: {missing}"
+        """Transform raw data with already-fitted pipeline steps."""
+        if not hasattr(self.pipeline, "named_steps"):
+            raise NotImplementedError(
+                "Preprocessing inspection is unavailable for wrapped calibrated pipelines"
             )
-
-        X = features_df[self.feature_names]
-
-        # 3. Apply scaler ONLY if it is a real transformer
-        if self.scaler is not None:
-            if isinstance(self.scaler, TransformerMixin):
-                X = pd.DataFrame(
-                    self.scaler.transform(X),
-                    columns=self.feature_names,
-                    index=X.index
-                )
-                logger.info("Scaler applied successfully")
-            else:
-                logger.warning(
-                    "Scaler is not a transformer. Skipping scaling. "
-                    f"Type={type(self.scaler)}"
-                )
-
-        return X
+        transformed = self.pipeline[:-1].transform(df)
+        return pd.DataFrame(transformed, columns=self.feature_names, index=df.index)
 
     def predict_with_confidence(
         self,
         df: pd.DataFrame,
-        threshold: float = 0.5
+        threshold: Optional[float] = None,
     ) -> Dict:
-        """
-        Make predictions with confidence scores.
-        """
-        logger.info(f"Running inference on {len(df)} samples")
-
-        X = self.preprocess_data(df)
-
-        probs = self.model.predict_proba(X)[:, 1]
-        preds = (probs >= threshold).astype(int)
-
-        high_confidence = (probs >= 0.8) | (probs <= 0.2)
-
+        """Predict without fitting or mutating any transformer."""
+        self.validate_input(df)
+        decision_threshold = float(
+            self.threshold if threshold is None else threshold
+        )
+        high_threshold = float(self.metadata.get("high_confidence_threshold", 0.8))
+        probabilities = self.pipeline.predict_proba(df)[:, 1]
+        predictions = (probabilities >= decision_threshold).astype(int)
+        high_confidence = (
+            (probabilities >= high_threshold)
+            | (probabilities <= 1.0 - high_threshold)
+        )
         return {
-            "predictions": preds.tolist(),
-            "probabilities": probs.tolist(),
-            "high_confidence": high_confidence.tolist()
+            "predictions": predictions.tolist(),
+            "probabilities": probabilities.tolist(),
+            "high_confidence": high_confidence.tolist(),
         }
 
-    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Predict and return dataframe with predictions attached.
-        """
-        result = self.predict_with_confidence(df)
+    def validate_input(self, df: pd.DataFrame) -> None:
+        """Reject incomplete payloads for models that declare a strict contract."""
+        if not self.strict_input_contract:
+            return
+        missing = [name for name in self.required_input_features if name not in df.columns]
+        empty = [
+            name for name in self.required_input_features
+            if name in df.columns and bool(df[name].isna().any())
+        ]
+        if missing or empty:
+            raise ValueError(
+                "Incomplete {} input; missing columns={}, null columns={}".format(
+                    self.version, missing, empty,
+                )
+            )
 
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+        result = self.predict_with_confidence(df)
         out = df.copy()
         out["prediction"] = result["predictions"]
         out["probability"] = result["probabilities"]
         out["high_confidence"] = result["high_confidence"]
-
         return out

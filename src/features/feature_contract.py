@@ -1,37 +1,28 @@
-"""
-Feature contract: defines required raw and engineered features for both training and inference.
+"""Single source of truth for the deployed churn model contract."""
 
-Contract:
-    - All required raw features must be present and numeric in input
-    - All engineered features must be present after preprocessing and scaling
-    - No extra/unexpected features allowed
+from typing import Set, Tuple
 
-Guarantees:
-    - Any contract violation will fail fast with actionable diagnostics
-    - No silent schema changes
-    - Training and inference use identical feature contracts
-"""
-
-
-def required_raw_features() -> set:
-    """
-    Returns the set of raw features required as input for feature engineering.
-    Contract: All must be present in input DataFrame, with compatible types (numeric).
-    This contract validates only external/raw inputs, not internal pipeline artifacts.
-    """
-    return {
-        "Age",
-        "Tenure",
-        "NumOfProducts",
-        "HasCrCard",
-        # Add all other raw input features expected from external sources here
-        # e.g., "CreditScore", "Balance", "IsActiveMember", ...
-    }
+TARGET_COLUMN = "Exited"
+RAW_FEATURES: Tuple[str, ...] = ("Age", "Tenure", "NumOfProducts")
+MODEL_FEATURES: Tuple[str, ...] = (
+    "NumOfProducts",
+    "Age_Squared",
+    "Age_Tenure_Interaction",
+)
+HTTP_FEATURES: Tuple[str, ...] = (
+    "SeniorCitizen", "Age", "NumOfProducts", "Tenure", "MonthlyCharges",
+    "TotalCharges", "InternetService", "OnlineSecurity", "OnlineBackup",
+    "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies",
+    "Contract", "PaymentMethod",
+)
+IGNORED_HTTP_FEATURES: Tuple[str, ...] = tuple(
+    feature for feature in HTTP_FEATURES if feature not in RAW_FEATURES
+)
 
 
-def engineered_features() -> set:
-    """
-    Returns the set of engineered features expected after feature engineering and preprocessing.
-    This is for internal pipeline use only, not for external contract validation.
-    """
-    return set()
+def required_raw_features() -> Set[str]:
+    return set(RAW_FEATURES)
+
+
+def engineered_features() -> Set[str]:
+    return set(MODEL_FEATURES)
