@@ -8,11 +8,15 @@ Production-ready churn prediction stack with:
 
 ## Architecture
 
-- Backend API: app/api.py
+- Backend bootstrap/lifespan: app/api.py
+- FastAPI routers: app/routers/
+- Application services: app/services/
+- Dependency injection: app/dependencies.py
 - Frontend UI: app/app.py
+- Frontend HTTP client and analytics provider: app/frontend/services/
 - Inference pipeline: src/pipelines/inference_pipeline.py
 - Model registry: src/models/registry.py
-- Model artifacts: models/v1/
+- Model artifacts: models/v2/ (`models/v1/` is retained for rollback)
 
 ## Quick Start (Local)
 
@@ -30,7 +34,6 @@ python -m venv .venv
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install fastapi uvicorn
 ```
 
 3. Set environment variables.
@@ -39,6 +42,7 @@ Windows PowerShell:
 
 ```powershell
 $env:MODEL_DIR="models"
+$env:MODEL_VERSION="v2"
 $env:API_URL="http://localhost:8000"
 $env:ALLOWED_ORIGINS="http://localhost:8501"
 ```
@@ -47,6 +51,7 @@ Linux/macOS:
 
 ```bash
 export MODEL_DIR=models
+export MODEL_VERSION=v2
 export API_URL=http://localhost:8000
 export ALLOWED_ORIGINS=http://localhost:8501
 ```
@@ -76,9 +81,52 @@ streamlit run app/app.py
 - POST /predict-batch
 - POST /monitor/report
 
+Configuration precedence is environment variable, `configs/inference.yaml`, then a safe default. Supported application variables include `MODEL_VERSION`, `MODEL_DIR`, `API_HOST`, `API_PORT`, `API_URL`, `ALLOWED_ORIGINS`, `PREDICTION_THRESHOLD`, `LOG_LEVEL`, `APP_ENV`, `API_TIMEOUT`, and `API_BATCH_TIMEOUT`.
+
 ## Model Artifacts
 
-Current expected artifact layout:
+Current active artifact layout:
+
+```text
+models/
+  v2/
+    pipeline.joblib
+    metadata.json
+```
+
+Train v2 from raw data with:
+
+```bash
+python scripts/train_churn.py
+```
+
+Run the reproducible champion/challenger experiment with:
+
+```bash
+python scripts/compare_churn_models.py
+```
+
+Phase 2B produced a calibrated `models/v3/` challenger and reports under `reports/model-comparison/`. The application default remains `v2`; validate v3 explicitly with `MODEL_VERSION=v3` before promotion.
+
+Evaluate promotion assumptions without retraining:
+
+```bash
+python scripts/evaluate_model_promotion.py
+```
+
+Optional shadow mode uses `MODEL_VERSION=v2` plus `SHADOW_MODEL_VERSION=v3`; v2 remains the HTTP response source. `CHURN_THRESHOLD_PROFILE` accepts `default`, `balanced`, `high_recall`, or `high_precision` when present in model metadata.
+
+Feature expansion is available as the non-default `v4` challenger. It aligns the request/dashboard with the bank
+dataset and selects ten leakage-safe features by training-only cross-validation:
+
+```bash
+python scripts/train_feature_expansion.py
+```
+
+See `docs/churn-model-v4.md`. Validate with `SHADOW_MODEL_VERSION=v4`; production remains on v2 until an explicit
+promotion decision.
+
+The legacy rollback layout remains under:
 
 ```text
 models/
@@ -134,6 +182,9 @@ docker run --rm -p 8000:8000 \
 ## Release Notes (Current Baseline)
 
 - Contract alignment fixed between frontend, API schema, and tests
-- Test suite green: 21 passed
+- Leakage-safe raw-data pipeline persisted as v2
+- Test suite green: 68 passed
 - Environment-based config overrides available via CFG__KEY__PATH
 - MODEL_DIR and CORS origin controls added for deployment safety
+- FastAPI routers/services, lifespan startup, and dependency injection added without changing HTTP contracts
+- Streamlit HTTP calls centralized in ApiClient; analytics is explicitly labeled DEMO DATA

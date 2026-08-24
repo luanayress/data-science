@@ -1,0 +1,6 @@
+model,best_score,search_iterations,search_time,best_parameters
+DummyPrior,,0,0.0,{}
+LogisticRegression,0.35866261292224516,8,1.4630815,"{""model__C"": 10.0, ""model__class_weight"": ""balanced""}"
+RandomForest,0.5994055774953274,10,93.1306773,"{""model__class_weight"": null, ""model__max_depth"": 4, ""model__max_features"": 0.7, ""model__min_samples_leaf"": 15, ""model__n_estimators"": 150}"
+GradientBoosting,0.5973459031023026,10,38.556927400000006,"{""model__learning_rate"": 0.03, ""model__max_depth"": 3, ""model__min_samples_leaf"": 5, ""model__n_estimators"": 100, ""model__subsample"": 0.8}"
+HistGradientBoosting,0.5994952145512354,10,41.29707339999999,"{""model__l2_regularization"": 0.0, ""model__learning_rate"": 0.03, ""model__max_iter"": 150, ""model__max_leaf_nodes"": 7, ""model__min_samples_leaf"": 10}"

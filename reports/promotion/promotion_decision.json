@@ -1,0 +1,95 @@
+{
+  "approved": false,
+  "status": "PROMOTION_RECOMMENDED",
+  "classification": "PROMOTE_V3_TECHNICALLY",
+  "reasons": [
+    "PR-AUC improved",
+    "ROC-AUC preserved",
+    "Brier improved",
+    "Log Loss improved",
+    "Recall gain acceptable",
+    "Precision drop acceptable"
+  ],
+  "warnings": [
+    "Real financial inputs are unavailable; business validation is pending",
+    "No production latency SLO is configured"
+  ],
+  "metrics": {
+    "champion": {
+      "threshold": 0.5,
+      "precision": 0.6223776223776224,
+      "recall": 0.4362745098039216,
+      "f1": 0.5129682997118156,
+      "tn": 1484,
+      "fp": 108,
+      "fn": 230,
+      "tp": 178,
+      "predicted_positive_count": 286,
+      "predicted_positive_rate": 0.143,
+      "campaign_rate": 0.143,
+      "churn_coverage": 0.4362745098039216,
+      "number_needed_to_contact": 1.6067415730337078,
+      "relative_cost": 1258.0,
+      "roc_auc": 0.8191054845304956,
+      "pr_auc": 0.5969413017910346,
+      "brier_score": 0.11980516398940916,
+      "log_loss": 0.38345593741442463,
+      "predict_time": 0.0103799999999978,
+      "model_version": "v2",
+      "scenario": "v2_current",
+      "cost_mode": "RELATIVE_COST"
+    },
+    "challenger": {
+      "threshold": 0.34,
+      "precision": 0.5871794871794872,
+      "recall": 0.5612745098039216,
+      "f1": 0.5739348370927319,
+      "tn": 1431,
+      "fp": 161,
+      "fn": 179,
+      "tp": 229,
+      "predicted_positive_count": 390,
+      "predicted_positive_rate": 0.195,
+      "campaign_rate": 0.195,
+      "churn_coverage": 0.5612745098039216,
+      "number_needed_to_contact": 1.703056768558952,
+      "relative_cost": 1056.0,
+      "roc_auc": 0.8297115171445462,
+      "pr_auc": 0.6199345515841139,
+      "brier_score": 0.11613955834657654,
+      "log_loss": 0.3737705059900223,
+      "predict_time": 0.0954452000000003,
+      "model_version": "v3",
+      "scenario": "v3_balanced",
+      "cost_mode": "RELATIVE_COST"
+    }
+  },
+  "threshold": 0.34,
+  "business_scenario": "v3_balanced",
+  "cost_mode": "RELATIVE_COST",
+  "financial_inputs_available": false,
+  "financial_champion": null,
+  "financial_challenger": null,
+  "uplift": {
+    "additional_customers_contacted": 104,
+    "additional_churners_identified": 51,
+    "additional_false_positives": 53,
+    "false_negatives_avoided": 51,
+    "campaign_volume_change_pct": 36.36363636363635
+  },
+  "agreement": {
+    "agreement_rate": 0.939,
+    "mean_probability_delta": -0.0026335928572351333,
+    "median_probability_delta": 0.002019236588223783,
+    "p95_probability_delta": 0.10956734220309021,
+    "categories": {
+      "both_stay": 1601,
+      "both_churn": 277,
+      "v2_stay_v3_churn": 113,
+      "v2_churn_v3_stay": 9
+    }
+  },
+  "capacity_constraint": null,
+  "rollback": "MODEL_VERSION=v2",
+  "shadow_example": "MODEL_VERSION=v2; SHADOW_MODEL_VERSION=v3"
+}

@@ -80,6 +80,7 @@ On Windows (PowerShell):
 
 ```powershell
 $env:MODEL_DIR="models"
+$env:MODEL_VERSION="v2"
 $env:DATA_DIR="data"
 $env:LOG_DIR="logs"
 $env:API_URL="http://localhost:8000"
@@ -98,14 +99,13 @@ $env:ALLOWED_ORIGINS="http://localhost:8501"
 * Saves a single pipeline artifact
 
 ```bash
-python train_and_save.py
+python scripts/train_churn.py
 ```
 
 Artifacts produced:
 
-* `MODEL_DIR/v1/model/model.joblib`
-* `MODEL_DIR/v1/scaler/scaler.joblib`
-* `MODEL_DIR/v1/model/metadata.json`
+* `MODEL_DIR/v2/pipeline.joblib`
+* `MODEL_DIR/v2/metadata.json`
 
 ---
 
@@ -117,6 +117,30 @@ pytest --maxfail=3 --disable-warnings -v
 
 If tests fail, **do not continue**.
 
+### 4.1 Champion/challenger experiment (optional)
+
+```bash
+python scripts/compare_churn_models.py
+```
+
+This keeps the v2 holdout split, performs model selection and threshold analysis only on training/CV data, and writes reports to `reports/model-comparison/`. A qualifying challenger is stored under `models/v3/`, but the API default remains v2.
+
+### 4.2 Promotion evaluation and shadow validation
+
+```bash
+python scripts/evaluate_model_promotion.py
+```
+
+Business assumptions live in `configs/churn_business.yaml`. To validate shadow inference without changing client responses:
+
+```powershell
+$env:MODEL_VERSION="v2"
+$env:SHADOW_MODEL_VERSION="v3"
+python -m uvicorn app.api:app --reload --port 8000
+```
+
+Rollback is explicit: set `MODEL_VERSION=v2`, clear the shadow/profile variables, and restart the API. See `docs/model-promotion.md`.
+
 ---
 
 ## 5. Start API Server (Inference)
@@ -126,6 +150,8 @@ Must be running **before** Streamlit.
 ```bash
 python -m uvicorn app.api:app --reload --port 8000
 ```
+
+The lifespan loads `models/v2/pipeline.joblib` once at startup. `MODEL_VERSION` overrides `configs/inference.yaml`; the YAML value overrides the built-in `v2` default.
 
 Health check:
 
@@ -140,6 +166,8 @@ http://localhost:8000/health
 ```bash
 streamlit run app/app.py
 ```
+
+No `.streamlit/secrets.toml` file is required for local execution. `API_URL` falls back to the URL configured in `configs/inference.yaml`.
 
 Dashboard URL:
 
@@ -188,6 +216,18 @@ docker run --rm -p 8000:8000 \
 | Wrong types          | Hard failure                  |
 | Manual preprocessing | Impossible                    |
 | API without model    | Hard failure                  |
+
+### 8.1 Expanded bank challenger (v4)
+
+Train and reproduce the feature ablation with `python scripts/train_feature_expansion.py`. The generated reports
+are stored in `reports/feature-expansion/`; the complete artifact is stored in `models/v4/`.
+
+Use `MODEL_VERSION=v2` and `SHADOW_MODEL_VERSION=v4` for observation. Do not set `MODEL_VERSION=v4` in production
+until business cost, capacity and latency constraints are approved. Roll back by restoring `MODEL_VERSION=v2`.
+
+Current readiness is `NOT_READY_FOR_CANARY`. Read `reports/feature-expansion/readiness_decision.json` before any
+rollout. Canary must remain disabled while any gate is `FAIL` or `BLOCKED`; currently fairness, financial value,
+campaign capacity and latency SLO block progression. Shadow comparisons require complete v4 bank payloads.
 
 ---
 

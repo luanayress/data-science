@@ -1,0 +1,155 @@
+{
+  "selected_group": "plus_demographics",
+  "selected_features": [
+    "CreditScore",
+    "Age",
+    "Tenure",
+    "Balance",
+    "NumOfProducts",
+    "HasCrCard",
+    "IsActiveMember",
+    "EstimatedSalary",
+    "Geography",
+    "Gender"
+  ],
+  "excluded_features": [
+    "RowNumber",
+    "CustomerId",
+    "Surname",
+    "Exited",
+    "Complain",
+    "Complain_With_Low_Satisfaction"
+  ],
+  "decision": "PROMOTION_RECOMMENDED",
+  "thresholds": {
+    "default": 0.5,
+    "balanced": 0.33,
+    "high_recall": 0.18,
+    "high_precision": 0.51,
+    "lowest_cost": 0.17,
+    "high_recall_precision_floor": 0.47783407219759344,
+    "high_precision_recall_floor": 0.4628834355828221
+  },
+  "v3_metrics": {
+    "accuracy": 0.83,
+    "precision": 0.5871794871794872,
+    "recall": 0.5612745098039216,
+    "f1": 0.5739348370927319,
+    "roc_auc": 0.8297115171445462,
+    "pr_auc": 0.6199345515841139,
+    "brier_score": 0.11613955834657654,
+    "log_loss": 0.3737705059900223,
+    "tn": 1431,
+    "fp": 161,
+    "fn": 179,
+    "tp": 229,
+    "specificity": 0.8988693467336684,
+    "fpr": 0.10113065326633164,
+    "fnr": 0.4387254901960784,
+    "predict_time": 0.09944660000000027,
+    "predicted_positive_count": 390,
+    "campaign_rate": 0.195,
+    "churn_coverage": 0.5612745098039216,
+    "number_needed_to_contact": 1.703056768558952,
+    "relative_cost": 1056.0
+  },
+  "v4_metrics": {
+    "accuracy": 0.8515,
+    "precision": 0.6312056737588653,
+    "recall": 0.6544117647058824,
+    "f1": 0.6425992779783394,
+    "roc_auc": 0.8783208321016849,
+    "pr_auc": 0.7310427325739732,
+    "brier_score": 0.09715061496540284,
+    "log_loss": 0.3212950415157702,
+    "tn": 1436,
+    "fp": 156,
+    "fn": 141,
+    "tp": 267,
+    "specificity": 0.9020100502512562,
+    "fpr": 0.09798994974874375,
+    "fnr": 0.34558823529411764,
+    "predict_time": 0.12890790000000152,
+    "predicted_positive_count": 423,
+    "campaign_rate": 0.2115,
+    "churn_coverage": 0.6544117647058824,
+    "number_needed_to_contact": 1.5842696629213484,
+    "relative_cost": 861.0
+  },
+  "holdout_probability_rows": 2000,
+  "calibration_results": [
+    {
+      "calibration": "uncalibrated",
+      "brier_score": 0.10221442185183424,
+      "log_loss": 0.3368795737611029
+    },
+    {
+      "calibration": "sigmoid",
+      "brier_score": 0.101953818156172,
+      "log_loss": 0.33520148304070124
+    },
+    {
+      "calibration": "isotonic",
+      "brier_score": 0.10244609668513141,
+      "log_loss": 0.34038979548788245
+    }
+  ],
+  "latency_benchmark": {
+    "iterations": 50,
+    "single_row_p50_seconds": 0.028434249999996553,
+    "single_row_p95_seconds": 0.06912215499999519,
+    "batch_rows": 2000,
+    "batch_p50_seconds": 0.14699705000000307,
+    "batch_p95_seconds": 0.26078670000000126,
+    "batch_p95_per_row_seconds": 0.00013039335000000063
+  },
+  "readiness": {
+    "status": "NOT_READY_FOR_CANARY",
+    "canary_started": false,
+    "gates": [
+      {
+        "gate": "paired_bootstrap",
+        "status": "PASS"
+      },
+      {
+        "gate": "calibration_selection",
+        "status": "PASS",
+        "detail": "sigmoid"
+      },
+      {
+        "gate": "fairness",
+        "status": "FAIL",
+        "limit": 0.1
+      },
+      {
+        "gate": "feature_importance",
+        "status": "PASS"
+      },
+      {
+        "gate": "strict_v4_contract",
+        "status": "PASS"
+      },
+      {
+        "gate": "financial_value",
+        "status": "BLOCKED",
+        "configured_value": false
+      },
+      {
+        "gate": "campaign_capacity",
+        "status": "BLOCKED",
+        "configured_value": null
+      },
+      {
+        "gate": "latency_slo",
+        "status": "BLOCKED",
+        "configured_value": null
+      }
+    ],
+    "blocking_gates": [
+      "fairness",
+      "financial_value",
+      "campaign_capacity",
+      "latency_slo"
+    ]
+  }
+}
