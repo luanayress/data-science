@@ -150,3 +150,6 @@ models/v1_backup/
 /test_outputs/
 *.tmp
 artifacts/
+
+# Local Graphify knowledge graph and session memory
+graphify-out/
