@@ -27,8 +27,8 @@ def test_build_features():
     
     # Check if new features are created
     assert 'NumOfProducts' in result.columns
-    assert 'Age_Squared_StandardScaled' in result.columns
-    assert 'Age_Tenure_Interaction_MinMaxScaled' in result.columns
+    assert 'Age_Squared' in result.columns
+    assert 'Age_Tenure_Interaction' in result.columns
     assert result.shape[0] == df.shape[0]
     print("✓ test_build_features passed")
 
@@ -88,13 +88,16 @@ def test_get_features_for_modeling():
         'customerID': [1, 2, 3],
         'feature1': [10, 20, 30],
         'feature2': [40, 50, 60],
-        'Churn': ['No', 'Yes', 'No']
+        'Age': [30, 40, 50],
+        'Tenure': [1, 2, 3],
+        'NumOfProducts': [1, 2, 1],
+        'Exited': [0, 1, 0]
     })
     
     X, y = get_features_for_modeling(df, drop_cols=['customerID'])
     
     assert 'customerID' not in X.columns
-    assert 'Churn' not in X.columns
+    assert 'Exited' not in X.columns
     assert len(y) == 3
     print("✓ test_get_features_for_modeling passed")
 

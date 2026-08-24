@@ -2,7 +2,7 @@ import pandas as pd
 from src.pipelines.inference_pipeline import InferencePipeline
 
 def test_inference_feature_alignment():
-    pipeline = InferencePipeline(version="v1")
+    pipeline = InferencePipeline(version="v2")
 
     X = pd.DataFrame([
         {
