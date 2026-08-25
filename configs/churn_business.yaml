@@ -1,0 +1,25 @@
+cost:
+  mode: RELATIVE_COST
+  false_negative_cost: 5.0
+  false_positive_cost: 1.0
+  sensitivity_fn_fp_ratios: [2, 3, 5, 10, 20]
+financial:
+  average_customer_value: null
+  retention_campaign_cost: null
+  retention_success_rate: null
+  false_positive_contact_cost: null
+promotion:
+  champion_version: v2
+  challenger_version: v3
+  pr_auc_tolerance: 0.0
+  roc_auc_tolerance: 0.005
+  brier_tolerance: 0.0
+  log_loss_tolerance: 0.0
+  minimum_recall_gain: 0.05
+  maximum_precision_drop: 0.10
+  maximum_campaign_rate: null
+  max_customers_contacted: null
+  maximum_prediction_latency_seconds: null
+reports:
+  model_comparison_dir: reports/model-comparison
+  promotion_dir: reports/promotion

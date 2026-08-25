@@ -1,193 +1,105 @@
-"""Inference pipeline - orchestrates end-to-end prediction workflow."""
+"""Inference over the persisted, fully fitted churn pipeline."""
+
+import os
+from typing import Dict, Optional
 
 import pandas as pd
-import numpy as np
-from typing import Dict, Any, Union
-from ..features.build_features import build_features, get_features_for_modeling
-from ..models.predict import make_predictions, predict_with_confidence, add_predictions_to_data
+
+from ..features.feature_contract import MODEL_FEATURES
 from ..models.registry import ModelRegistry
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
+os.environ.setdefault("LOKY_MAX_CPU_COUNT", "1")
 
 
 class InferencePipeline:
-    """Pipeline for making predictions on new data."""
-    
-    def __init__(self, version: str = "v1"):
-        """
-        Initialize inference pipeline.
-        
-        Args:
-            version: Model version to load.
-        """
+    """Load one versioned pipeline and use it unchanged for all predictions."""
+
+    def __init__(self, version: str = "v2", threshold_profile: Optional[str] = None):
         self.version = version
         self.registry = ModelRegistry(version=version)
-        self.model = None
-        self.scaler = None
-        self.metadata = None
-        self._load_artifacts()
-    
-    def _load_artifacts(self) -> None:
-        """Load model and scaler from registry."""
-        logger.info(f"Loading artifacts from version {self.version}")
-        try:
-            self.model = self.registry.load_model("model")
-            self.scaler = self.registry.load_scaler("scaler")
-            self.metadata = self.registry.load_metadata()
-            logger.info("Artifacts loaded successfully")
-        except Exception as e:
-            logger.error(f"Failed to load artifacts: {e}")
-            raise
-    
+        self.pipeline = self.registry.load_pipeline()
+        self.metadata = self.registry.load_metadata()
+        if not self.metadata:
+            raise ValueError("Missing pipeline metadata for version {}".format(version))
+        self.feature_names = self.metadata.get("model_features", list(MODEL_FEATURES))
+        self.required_input_features = self.metadata.get("raw_features", [])
+        self.strict_input_contract = bool(self.metadata.get("strict_input_contract", False))
+        self.threshold_profile = threshold_profile
+        self.threshold = self._resolve_threshold(threshold_profile)
+        if hasattr(self.pipeline, "named_steps"):
+            self.model = self.pipeline.named_steps["model"]
+            self.scaler = self.pipeline.named_steps["preprocessing"]
+        else:
+            # Calibrated challengers wrap the complete raw-input pipeline.
+            self.model = self.pipeline
+            self.scaler = None
+
+    def _resolve_threshold(self, profile: Optional[str]) -> float:
+        if profile is None:
+            return float(self.metadata.get("selected_threshold", self.metadata["threshold"]))
+        thresholds = self.metadata.get("thresholds", {})
+        if not thresholds:
+            return float(self.metadata["threshold"])
+        if profile == "default":
+            return float(thresholds.get("default", self.metadata["threshold"]))
+        if profile not in thresholds:
+            raise ValueError("Threshold profile {!r} is unavailable for model {}".format(profile, self.version))
+        return float(thresholds[profile])
+
     def preprocess_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Preprocess data for inference.
-        
-        Args:
-            df: Raw input DataFrame.
-            
-        Returns:
-            Processed DataFrame ready for prediction.
-        """
-        logger.info("Preprocessing data...")
-        
-        # Build features
-        df_features = build_features(df)
-        
-        # Keep original target column if present for later comparison
-        target_col = 'Churn' if 'Churn' in df_features.columns else None
-        
-        # Get features
-        try:
-            X, y = get_features_for_modeling(df_features, drop_cols=['customerID'])
-        except ValueError:
-            # No target column, just drop ID
-            X = df_features.drop(columns=[col for col in ['customerID', 'Churn'] if col in df_features.columns])
-        
-        # Scale features
-        if self.scaler:
-            X_scaled = pd.DataFrame(
-                self.scaler.transform(X),
-                columns=X.columns
+        """Transform raw data with already-fitted pipeline steps."""
+        if not hasattr(self.pipeline, "named_steps"):
+            raise NotImplementedError(
+                "Preprocessing inspection is unavailable for wrapped calibrated pipelines"
             )
-            logger.info(f"Data scaled. Shape: {X_scaled.shape}")
-            return X_scaled
-        else:
-            logger.warning("No scaler available, using raw features")
-            return X
-    
-    def predict(
-        self,
-        df: pd.DataFrame,
-        return_probabilities: bool = True,
-        add_to_original: bool = True
-    ) -> Union[np.ndarray, pd.DataFrame]:
-        """
-        Make predictions on new data.
-        
-        Args:
-            df: Input DataFrame with raw features.
-            return_probabilities: If True, return probability scores.
-            add_to_original: If True, return DataFrame with predictions added.
-            
-        Returns:
-            Predictions or DataFrame with predictions added.
-        """
-        logger.info(f"Making predictions on {len(df)} samples")
-        
-        # Preprocess
-        X_processed = self.preprocess_data(df)
-        
-        # Predict
-        if return_probabilities:
-            predictions = make_predictions(self.model, X_processed, return_probabilities=True)
-        else:
-            predictions = make_predictions(self.model, X_processed, return_probabilities=False)
-        
-        if add_to_original:
-            df_with_pred = add_predictions_to_data(
-                df, self.model, X_processed,
-                pred_col='prediction',
-                prob_col='probability'
-            )
-            return df_with_pred
-        else:
-            return predictions
-    
+        transformed = self.pipeline[:-1].transform(df)
+        return pd.DataFrame(transformed, columns=self.feature_names, index=df.index)
+
     def predict_with_confidence(
         self,
         df: pd.DataFrame,
-        threshold: float = 0.5
+        threshold: Optional[float] = None,
     ) -> Dict:
-        """
-        Make predictions with confidence scores.
-        
-        Args:
-            df: Input DataFrame.
-            threshold: Decision threshold.
-            
-        Returns:
-            Dictionary with predictions and confidence.
-        """
-        logger.info(f"Making predictions with confidence threshold {threshold}")
-        
-        X_processed = self.preprocess_data(df)
-        predictions_dict = predict_with_confidence(self.model, X_processed, threshold)
-        
-        return predictions_dict
-    
-    def batch_predict(
-        self,
-        df: pd.DataFrame,
-        batch_size: int = 1000
-    ) -> pd.DataFrame:
-        """
-        Make predictions on large dataset in batches.
-        
-        Args:
-            df: Input DataFrame.
-            batch_size: Batch size for processing.
-            
-        Returns:
-            DataFrame with predictions.
-        """
-        logger.info(f"Making batch predictions (batch_size={batch_size})")
-        
-        all_predictions = []
-        n_batches = (len(df) + batch_size - 1) // batch_size
-        
-        for i in range(n_batches):
-            start_idx = i * batch_size
-            end_idx = min((i + 1) * batch_size, len(df))
-            
-            batch_df = df.iloc[start_idx:end_idx]
-            batch_pred = self.predict(batch_df, add_to_original=False)
-            all_predictions.extend(batch_pred)
-            
-            logger.info(f"Processed batch {i+1}/{n_batches}")
-        
-        df_with_pred = df.copy()
-        df_with_pred['prediction'] = all_predictions
-        
-        return df_with_pred
+        """Predict without fitting or mutating any transformer."""
+        self.validate_input(df)
+        decision_threshold = float(
+            self.threshold if threshold is None else threshold
+        )
+        high_threshold = float(self.metadata.get("high_confidence_threshold", 0.8))
+        probabilities = self.pipeline.predict_proba(df)[:, 1]
+        predictions = (probabilities >= decision_threshold).astype(int)
+        high_confidence = (
+            (probabilities >= high_threshold)
+            | (probabilities <= 1.0 - high_threshold)
+        )
+        return {
+            "predictions": predictions.tolist(),
+            "probabilities": probabilities.tolist(),
+            "high_confidence": high_confidence.tolist(),
+        }
 
+    def validate_input(self, df: pd.DataFrame) -> None:
+        """Reject incomplete payloads for models that declare a strict contract."""
+        if not self.strict_input_contract:
+            return
+        missing = [name for name in self.required_input_features if name not in df.columns]
+        empty = [
+            name for name in self.required_input_features
+            if name in df.columns and bool(df[name].isna().any())
+        ]
+        if missing or empty:
+            raise ValueError(
+                "Incomplete {} input; missing columns={}, null columns={}".format(
+                    self.version, missing, empty,
+                )
+            )
 
-def run_inference(
-    df: pd.DataFrame,
-    version: str = "v1",
-    return_probabilities: bool = True
-) -> pd.DataFrame:
-    """
-    Convenience function to run inference pipeline.
-    
-    Args:
-        df: Input DataFrame.
-        version: Model version.
-        return_probabilities: Whether to return probability scores.
-        
-    Returns:
-        DataFrame with predictions.
-    """
-    pipeline = InferencePipeline(version=version)
-    return pipeline.predict(df, return_probabilities=return_probabilities, add_to_original=True)
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+        result = self.predict_with_confidence(df)
+        out = df.copy()
+        out["prediction"] = result["predictions"]
+        out["probability"] = result["probabilities"]
+        out["high_confidence"] = result["high_confidence"]
+        return out

@@ -1,0 +1,49 @@
+{
+  "status": "NOT_READY_FOR_CANARY",
+  "canary_started": false,
+  "gates": [
+    {
+      "gate": "paired_bootstrap",
+      "status": "PASS"
+    },
+    {
+      "gate": "calibration_selection",
+      "status": "PASS",
+      "detail": "sigmoid"
+    },
+    {
+      "gate": "fairness",
+      "status": "FAIL",
+      "limit": 0.1
+    },
+    {
+      "gate": "feature_importance",
+      "status": "PASS"
+    },
+    {
+      "gate": "strict_v4_contract",
+      "status": "PASS"
+    },
+    {
+      "gate": "financial_value",
+      "status": "BLOCKED",
+      "configured_value": false
+    },
+    {
+      "gate": "campaign_capacity",
+      "status": "BLOCKED",
+      "configured_value": null
+    },
+    {
+      "gate": "latency_slo",
+      "status": "BLOCKED",
+      "configured_value": null
+    }
+  ],
+  "blocking_gates": [
+    "fairness",
+    "financial_value",
+    "campaign_capacity",
+    "latency_slo"
+  ]
+}

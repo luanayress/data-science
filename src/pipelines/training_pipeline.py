@@ -1,156 +1,109 @@
-"""Training pipeline - orchestrates end-to-end training workflow."""
+"""Official leakage-safe churn training pipeline."""
 
-import pandas as pd
-from typing import Dict, Tuple, Any
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import (
+    accuracy_score, average_precision_score, f1_score, precision_score,
+    recall_score, roc_auc_score,
+)
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
 from ..data.load_data import load_customer_churn_data
-from ..data.validation import validate_data_shape, get_data_summary
 from ..data.split import split_train_test
-from ..features.build_features import build_features, get_features_for_modeling
-from ..models.train import train_gradient_boosting, create_preprocessing_pipeline
-from ..models.evaluate import evaluate_model, evaluate_on_train_test
+from ..data.validation import validate_data_shape, validate_required_columns
+from ..features.build_features import ChurnFeatureEngineer, get_features_for_modeling
+from ..features.feature_contract import (
+    IGNORED_HTTP_FEATURES, MODEL_FEATURES, RAW_FEATURES, TARGET_COLUMN,
+)
 from ..models.registry import ModelRegistry
+from ..utils.config import load_config, load_training_config
 from ..utils.logger import get_logger
-from ..utils.config import load_training_config
 
 logger = get_logger(__name__)
 
 
-def run_training_pipeline(
-    config_file: str = None,
-    save_model: bool = True,
-    version: str = "v1"
-) -> Dict[str, Any]:
-    """
-    Run complete training pipeline.
-    
-    Args:
-        config_file: Path to config file (optional).
-        save_model: Whether to save trained model.
-        version: Model version directory.
-        
-    Returns:
-        Dictionary with results including model, metrics, and metadata.
-    """
-    logger.info("=" * 50)
-    logger.info("Starting Training Pipeline")
-    logger.info("=" * 50)
-    
-    # Load configuration
-    try:
-        config = load_training_config()
-        logger.info(f"Configuration loaded: {config}")
-    except Exception as e:
-        logger.warning(f"Could not load config: {e}. Using defaults.")
-        config = {}
-    
-    # Step 1: Load data
-    logger.info("\nStep 1: Loading data...")
-    try:
-        df_raw = load_customer_churn_data()
-        validate_data_shape(df_raw, min_rows=1, min_cols=1)
-        logger.info(f"Data shape: {df_raw.shape}")
-        logger.info(f"Data summary:\n{get_data_summary(df_raw)}")
-    except Exception as e:
-        logger.error(f"Failed to load data: {e}")
-        raise
-    
-    # Step 2: Feature engineering
-    logger.info("\nStep 2: Building features...")
-    try:
-        df_features = build_features(df_raw)
-        logger.info(f"Features shape: {df_features.shape}")
-    except Exception as e:
-        logger.error(f"Failed to build features: {e}")
-        raise
-    
-    # Step 3: Prepare X and y
-    logger.info("\nStep 3: Preparing features and target...")
-    try:
-        X, y = get_features_for_modeling(df_features)
-        logger.info(f"X shape: {X.shape}, y shape: {y.shape}")
-        logger.info(f"Class distribution:\n{y.value_counts()}")
-    except Exception as e:
-        logger.error(f"Failed to prepare features: {e}")
-        raise
-    
-    # Step 4: Train-test split
-    logger.info("\nStep 4: Splitting data...")
-    try:
-        test_size = config.get('test_size', 0.2)
-        X_train, X_test, y_train, y_test = split_train_test(
-            X, y, test_size=test_size, stratify=True
-        )
-        logger.info(f"Train set: {X_train.shape}, Test set: {X_test.shape}")
-    except Exception as e:
-        logger.error(f"Failed to split data: {e}")
-        raise
-    
-    # Step 5: Preprocess
-    logger.info("\nStep 5: Creating preprocessing pipeline...")
-    try:
-        scaler = create_preprocessing_pipeline(X_train)
-        X_train_scaled = pd.DataFrame(
-            scaler.transform(X_train),
-            columns=X_train.columns
-        )
-        X_test_scaled = pd.DataFrame(
-            scaler.transform(X_test),
-            columns=X_test.columns
-        )
-        logger.info("Preprocessing complete")
-    except Exception as e:
-        logger.warning(f"Preprocessing failed: {e}. Continuing without scaling.")
-        X_train_scaled = X_train
-        X_test_scaled = X_test
-        scaler = None
-    
-    # Step 6: Train model
-    logger.info("\nStep 6: Training model...")
-    try:
-        model_params = config.get('model_params', {})
-        model, model_metadata = train_gradient_boosting(X_train_scaled, y_train, **model_params)
-        logger.info(f"Model trained successfully")
-    except Exception as e:
-        logger.error(f"Failed to train model: {e}")
-        raise
-    
-    # Step 7: Evaluate
-    logger.info("\nStep 7: Evaluating model...")
-    try:
-        test_metrics = evaluate_model(model, X_test_scaled, y_test)
-        train_test_metrics = evaluate_on_train_test(model, X_train_scaled, X_test_scaled, y_train, y_test)
-        logger.info(f"Evaluation complete")
-    except Exception as e:
-        logger.error(f"Failed to evaluate model: {e}")
-        test_metrics = {}
-        train_test_metrics = {}
-    
-    # Step 8: Save model
-    results = {
-        'model': model,
-        'scaler': scaler,
-        'metadata': model_metadata,
-        'test_metrics': test_metrics,
-        'train_test_metrics': train_test_metrics,
-        'data_info': {
-            'n_features': X_train.shape[1],
-            'feature_names': list(X_train.columns)
-        }
+def create_churn_pipeline(model_params: Optional[Dict[str, Any]] = None) -> Pipeline:
+    """Build an unfitted pipeline that accepts raw churn columns."""
+    return Pipeline([
+        ("feature_engineering", ChurnFeatureEngineer()),
+        ("preprocessing", StandardScaler()),
+        ("model", GradientBoostingClassifier(**(model_params or {}))),
+    ])
+
+
+def _evaluate(pipeline: Pipeline, X_test, y_test, threshold: float) -> Dict[str, float]:
+    probabilities = pipeline.predict_proba(X_test)[:, 1]
+    predictions = (probabilities >= threshold).astype(int)
+    return {
+        "accuracy": float(accuracy_score(y_test, predictions)),
+        "precision": float(precision_score(y_test, predictions, zero_division=0)),
+        "recall": float(recall_score(y_test, predictions, zero_division=0)),
+        "f1": float(f1_score(y_test, predictions, zero_division=0)),
+        "roc_auc": float(roc_auc_score(y_test, probabilities)),
+        "pr_auc": float(average_precision_score(y_test, probabilities)),
     }
-    
+
+
+def run_training_pipeline(
+    config_file: Optional[str] = None,
+    save_model: bool = True,
+    version: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Split raw data, fit only on train, evaluate on test and persist v2."""
+    config = load_config(config_file) if config_file else load_training_config()
+    training = config["training"]
+    model_config = config["model"]
+    prediction = config["prediction"]
+    selected_version = version or training["version"]
+    if model_config["type"] != "GradientBoostingClassifier":
+        raise ValueError("Unsupported model type: {}".format(model_config["type"]))
+
+    df = load_customer_churn_data()
+    validate_data_shape(df, min_rows=1, min_cols=1)
+    validate_required_columns(df, list(RAW_FEATURES) + [TARGET_COLUMN])
+    X, y = get_features_for_modeling(df)
+
+    X_train, X_test, y_train, y_test = split_train_test(
+        X, y,
+        test_size=training["test_size"],
+        random_state=training["random_state"],
+        stratify=True,
+    )
+    params = dict(model_config["params"])
+    params["random_state"] = training["random_state"]
+    pipeline = create_churn_pipeline(params)
+    pipeline.fit(X_train, y_train)
+
+    threshold = float(prediction["threshold"])
+    metrics = _evaluate(pipeline, X_test, y_test, threshold)
+    metadata = {
+        "name": "churn",
+        "version": selected_version,
+        "algorithm": type(pipeline.named_steps["model"]).__name__,
+        "target": TARGET_COLUMN,
+        "raw_features": list(RAW_FEATURES),
+        "model_features": list(MODEL_FEATURES),
+        "ignored_http_features": list(IGNORED_HTTP_FEATURES),
+        "trained_at": datetime.now(timezone.utc).isoformat(),
+        "train_rows": int(len(X_train)),
+        "test_rows": int(len(X_test)),
+        "random_state": int(training["random_state"]),
+        "threshold": threshold,
+        "high_confidence_threshold": float(prediction["high_confidence_threshold"]),
+        "metrics": metrics,
+    }
     if save_model:
-        logger.info("\nStep 8: Saving model and artifacts...")
-        try:
-            registry = ModelRegistry(version=version)
-            registry.save_model(model, "model", model_metadata)
-            if scaler:
-                registry.save_scaler(scaler, "scaler")
-            logger.info("Model and scaler saved successfully")
-        except Exception as e:
-            logger.error(f"Failed to save model: {e}")
-    
-    logger.info("\n" + "=" * 50)
-    logger.info("Training Pipeline Complete!")
-    logger.info("=" * 50)
-    
-    return results
+        ModelRegistry(selected_version).save_pipeline(pipeline, metadata)
+    logger.info("Training complete | version=%s metrics=%s", selected_version, metrics)
+    return {
+        "pipeline": pipeline,
+        "metadata": metadata,
+        "metrics": metrics,
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+    }

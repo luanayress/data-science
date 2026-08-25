@@ -1,110 +1,55 @@
-"""Feature engineering pipeline."""
+"""Deterministic churn feature engineering shared by training and inference."""
+
+from typing import List, Optional, Tuple
 
 import pandas as pd
-import numpy as np
-from typing import List, Tuple
-from ..utils.logger import get_logger
-from .transformers import (
-    CategoricalEncoder,
-    NumericalScaler,
-    FeatureSelector
-)
+from sklearn.base import BaseEstimator, TransformerMixin
 
-logger = get_logger(__name__)
+from .feature_contract import MODEL_FEATURES, RAW_FEATURES, TARGET_COLUMN
 
 
-def get_feature_config() -> dict:
-    """Get feature engineering configuration."""
-    return {
-        'categorical_features': [
-            'InternetService', 'OnlineSecurity', 'OnlineBackup',
-            'DeviceProtection', 'TechSupport', 'StreamingTV',
-            'StreamingMovies', 'Contract', 'PaymentMethod'
-        ],
-        'numerical_features': [
-            'SeniorCitizen', 'MonthlyCharges', 'TotalCharges',
-            'Tenure', 'PhoneService', 'MultipleLines'
-        ],
-        'binary_features': [
-            'Churn', 'gender', 'Partner', 'Dependents', 'PhoneService',
-            'InternetService', 'PaperlessBilling'
+class ChurnFeatureEngineer(BaseEstimator, TransformerMixin):
+    """Create stateless model features from raw customer columns."""
+
+    def fit(self, X: pd.DataFrame, y=None):
+        self._validate(X)
+        return self
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        self._validate(X)
+        out = X.loc[:, list(RAW_FEATURES)].copy()
+        out["Age_Squared"] = out["Age"] ** 2
+        out["Age_Tenure_Interaction"] = out["Age"] * out["Tenure"]
+        return out.loc[:, list(MODEL_FEATURES)]
+
+    @staticmethod
+    def _validate(df: pd.DataFrame) -> None:
+        missing = set(RAW_FEATURES) - set(df.columns)
+        if missing:
+            raise ValueError("Missing raw input columns: {}".format(sorted(missing)))
+        non_numeric = [
+            name for name in RAW_FEATURES
+            if not pd.api.types.is_numeric_dtype(df[name])
         ]
-    }
+        if non_numeric:
+            raise ValueError("Raw input columns must be numeric: {}".format(non_numeric))
 
 
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build features from raw data.
-    
-    Args:
-        df: Raw DataFrame.
-        
-    Returns:
-        DataFrame with engineered features.
-    """
-    df_processed = df.copy()
-    
-    logger.info("Starting feature engineering")
-    
-    # Handle missing values
-    if 'TotalCharges' in df_processed.columns:
-        df_processed['TotalCharges'] = pd.to_numeric(df_processed['TotalCharges'], errors='coerce')
-        df_processed['TotalCharges'].fillna(df_processed['TotalCharges'].median(), inplace=True)
-    
-    # Create derived features
-    if 'Tenure' in df_processed.columns and 'MonthlyCharges' in df_processed.columns:
-        df_processed['LifetimeValue'] = df_processed['Tenure'] * df_processed['MonthlyCharges']
-        logger.info("Created LifetimeValue feature")
-    
-    if 'MonthlyCharges' in df_processed.columns and 'TotalCharges' in df_processed.columns:
-        df_processed['MonthlyChargeToTotal'] = df_processed['MonthlyCharges'] / (df_processed['TotalCharges'] + 1)
-        logger.info("Created MonthlyChargeToTotal feature")
-    
-    # Tenure groups
-    if 'Tenure' in df_processed.columns:
-        df_processed['TenureGroup'] = pd.cut(
-            df_processed['Tenure'],
-            bins=[0, 12, 24, 48, 72],
-            labels=['0-12', '13-24', '25-48', '49+']
-        )
-        logger.info("Created TenureGroup feature")
-    
-    logger.info(f"Feature engineering complete. Shape: {df_processed.shape}")
-    
-    return df_processed
+    """Backward-compatible stateless feature builder; never fits a scaler."""
+    return ChurnFeatureEngineer().fit_transform(df)
 
 
 def get_features_for_modeling(
     df: pd.DataFrame,
-    target_col: str = 'Churn',
-    drop_cols: List[str] = None
+    target_col: str = TARGET_COLUMN,
+    drop_cols: Optional[List[str]] = None,
 ) -> Tuple[pd.DataFrame, pd.Series]:
-    """
-    Prepare features and target for modeling.
-    
-    Args:
-        df: Feature-engineered DataFrame.
-        target_col: Name of target column.
-        drop_cols: Columns to drop.
-        
-    Returns:
-        Tuple of (X, y).
-    """
-    if drop_cols is None:
-        drop_cols = ['customerID'] if 'customerID' in df.columns else []
-    
-    # Drop unnecessary columns
-    X = df.drop(columns=[col for col in drop_cols + [target_col] if col in df.columns])
-    
-    # Extract target
-    if target_col in df.columns:
-        y = df[target_col]
-        # Convert to binary if string
-        if y.dtype == 'object':
-            y = (y == 'Yes').astype(int)
-    else:
-        raise ValueError(f"Target column '{target_col}' not found in DataFrame")
-    
-    logger.info(f"Prepared features: {X.shape}, target: {y.shape}")
-    
-    return X, y
+    if target_col not in df.columns:
+        raise ValueError("Target column not found: {}".format(target_col))
+    missing = set(RAW_FEATURES) - set(df.columns)
+    if missing:
+        raise ValueError("Missing raw input columns: {}".format(sorted(missing)))
+    drop_cols = drop_cols or []
+    X = df.loc[:, list(RAW_FEATURES)].drop(columns=drop_cols, errors="ignore")
+    return X, df[target_col]

@@ -1,4 +1,5 @@
-"""
+"""DEPRECATED: legacy v1 artifact writer; use scripts/train_churn.py.
+
 Model Persistence Script
 =========================
 This script saves the trained models, scalers, and preprocessing configuration
@@ -120,7 +121,7 @@ def verify_artifacts():
     print("\n" + "="*70)
     if all_exist:
         print("✓ All artifacts verified successfully!")
-        print("  Dashboard is ready to run: streamlit run app.py")
+        print("  Dashboard is ready to run: streamlit run app/app.py")
     else:
         print("✗ Some artifacts are missing.")
         print("  Please run save_model_artifacts() with trained models.")
@@ -187,7 +188,7 @@ STEP 2: Run Streamlit Dashboard
 In terminal/command prompt:
 
 cd "c:\\Users\\Luan\\Desktop\\Data Science"
-streamlit run app.py
+streamlit run app/app.py
 
 STEP 3: Access the Dashboard
 ------------------------------
@@ -227,7 +228,7 @@ DETAILED INSTRUCTIONS FOR SAVING MODELS
    - preprocessing_config.pkl (configuration)
 
 4. Run the dashboard with:
-   streamlit run app.py
+   streamlit run app/app.py
 
 ================================================================================
 TROUBLESHOOTING

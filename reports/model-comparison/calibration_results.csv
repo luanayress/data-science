@@ -1,0 +1,4 @@
+model,calibration,brier_score,log_loss
+HistGradientBoosting,uncalibrated,0.11828416047916951,0.3820243348892442
+HistGradientBoosting,sigmoid,0.1181274351528424,0.3814945392937347
+HistGradientBoosting,isotonic,0.1183487462658663,0.3856639225542503

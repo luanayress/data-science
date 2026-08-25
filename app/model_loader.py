@@ -1,4 +1,5 @@
-"""
+"""DEPRECATED: legacy direct loader; production uses InferencePipeline v2.
+
 Model Deployment Module
 ========================
 This module handles the saving and loading of trained models for production use.

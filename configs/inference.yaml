@@ -1,24 +1,15 @@
-# Inference Configuration
-# This file contains all settings for model inference/prediction
-
 model:
-  version: v1
-  path: models/v1/
-  files:
-    model: model.pkl
-    scaler: scaler.pkl
-    metadata: metadata.json
-
-input_validation:
-  strict: true
-  check_types: true
-  
+  version: v2
+  shadow_version: null
 prediction:
-  probability_threshold: 0.5
-  return_probabilities: true
-  batch_size: 100
-  
-output:
-  format: json
-  include_confidence: true
-  round_decimals: 4
+  threshold: 0.5
+  threshold_profile: null
+api:
+  host: 127.0.0.1
+  port: 8000
+  url: http://localhost:8000
+  timeout: 5.0
+  batch_timeout: 30.0
+logging:
+  level: INFO
+environment: development

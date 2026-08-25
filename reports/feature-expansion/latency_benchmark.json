@@ -1,0 +1,9 @@
+{
+  "iterations": 50,
+  "single_row_p50_seconds": 0.028434249999996553,
+  "single_row_p95_seconds": 0.06912215499999519,
+  "batch_rows": 2000,
+  "batch_p50_seconds": 0.14699705000000307,
+  "batch_p95_seconds": 0.26078670000000126,
+  "batch_p95_per_row_seconds": 0.00013039335000000063
+}

@@ -1,0 +1,15 @@
+experiment:
+  random_state: 42
+  test_size: 0.2
+  cv_folds: 5
+  n_jobs: 1
+  cost_false_negative: 5.0
+  cost_false_positive: 1.0
+  output_dir: reports/feature-expansion
+  challenger_version: v4
+  bootstrap_iterations: 1000
+  permutation_repeats: 10
+  maximum_fairness_gap: 0.10
+  financial_inputs_available: false
+  maximum_campaign_rate: null
+  maximum_prediction_latency_seconds: null

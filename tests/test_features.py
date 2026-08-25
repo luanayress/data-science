@@ -18,16 +18,17 @@ def test_build_features():
     """Test feature building."""
     # Create sample data
     df = pd.DataFrame({
+        'Age': [30, 40, 50, 60],
+        'NumOfProducts': [1, 2, 3, 4],
         'Tenure': [10, 20, 30, 40],
-        'MonthlyCharges': [50.0, 60.0, 70.0, 80.0],
-        'TotalCharges': [500.0, 1200.0, 2100.0, 3200.0],
-        'Churn': ['No', 'Yes', 'No', 'No']
     })
     
     result = build_features(df)
     
     # Check if new features are created
-    assert 'LifetimeValue' in result.columns
+    assert 'NumOfProducts' in result.columns
+    assert 'Age_Squared' in result.columns
+    assert 'Age_Tenure_Interaction' in result.columns
     assert result.shape[0] == df.shape[0]
     print("✓ test_build_features passed")
 
@@ -87,13 +88,16 @@ def test_get_features_for_modeling():
         'customerID': [1, 2, 3],
         'feature1': [10, 20, 30],
         'feature2': [40, 50, 60],
-        'Churn': ['No', 'Yes', 'No']
+        'Age': [30, 40, 50],
+        'Tenure': [1, 2, 3],
+        'NumOfProducts': [1, 2, 1],
+        'Exited': [0, 1, 0]
     })
     
     X, y = get_features_for_modeling(df, drop_cols=['customerID'])
     
     assert 'customerID' not in X.columns
-    assert 'Churn' not in X.columns
+    assert 'Exited' not in X.columns
     assert len(y) == 3
     print("✓ test_get_features_for_modeling passed")
 

@@ -1,5 +1,6 @@
 """Path management utilities."""
 
+import os
 from pathlib import Path
 
 
@@ -34,7 +35,13 @@ def get_processed_data_path(filename: str = "") -> Path:
 
 def get_models_path(version: str = "v1", filename: str = "") -> Path:
     """Get path to models directory."""
-    models_dir = get_project_root() / "models" / version
+    model_dir_env = os.getenv("MODEL_DIR", "models")
+    base_dir = Path(model_dir_env)
+
+    if not base_dir.is_absolute():
+        base_dir = get_project_root() / base_dir
+
+    models_dir = base_dir / version
     models_dir.mkdir(parents=True, exist_ok=True)
     if filename:
         return models_dir / filename

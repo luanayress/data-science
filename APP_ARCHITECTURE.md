@@ -46,7 +46,7 @@
 app/
 ├── __init__.py
 ├── api.py              # FastAPI backend (NEW)
-├── app.py              # Streamlit frontend (UPDATED)
+├── app.py              # Streamlit frontend (`app/app.py`)
 ├── schema.py           # Pydantic schemas
 └── model_loader.py     # Optional: Direct model loading
 ```
@@ -87,7 +87,7 @@ python app/api.py
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
-### Streamlit Frontend (app.py)
+### Streamlit Frontend (`app/app.py`)
 
 **Purpose:** Interactive visualization and prediction interface
 

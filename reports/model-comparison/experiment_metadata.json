@@ -1,0 +1,87 @@
+{
+  "dataset": "data/raw/Customer-Churn-Records.csv",
+  "dataset_rows": 10000,
+  "train_rows": 8000,
+  "holdout_rows": 2000,
+  "random_state": 42,
+  "test_size": 0.2,
+  "cv_folds": 5,
+  "primary_metric": "average_precision",
+  "optional_candidates": [
+    {
+      "library": "xgboost",
+      "status": "SKIPPED",
+      "reason": "not installed; optional dependency was not added automatically"
+    },
+    {
+      "library": "lightgbm",
+      "status": "SKIPPED",
+      "reason": "not installed; optional dependency was not added automatically"
+    },
+    {
+      "library": "catboost",
+      "status": "SKIPPED",
+      "reason": "not installed; optional dependency was not added automatically"
+    }
+  ],
+  "best_parameters": {
+    "ProductionV2": {
+      "memory": null,
+      "steps": [
+        [
+          "feature_engineering",
+          "ChurnFeatureEngineer()"
+        ],
+        [
+          "preprocessing",
+          "StandardScaler()"
+        ],
+        [
+          "model",
+          "GradientBoostingClassifier(max_depth=5, min_samples_leaf=2, min_samples_split=5,\n                           random_state=42)"
+        ]
+      ],
+      "verbose": false
+    },
+    "DummyPrior": {},
+    "LogisticRegression": {
+      "model__class_weight": "balanced",
+      "model__C": 10.0
+    },
+    "RandomForest": {
+      "model__n_estimators": 150,
+      "model__min_samples_leaf": 15,
+      "model__max_features": 0.7,
+      "model__max_depth": 4,
+      "model__class_weight": null
+    },
+    "GradientBoosting": {
+      "model__subsample": 0.8,
+      "model__n_estimators": 100,
+      "model__min_samples_leaf": 5,
+      "model__max_depth": 3,
+      "model__learning_rate": 0.03
+    },
+    "HistGradientBoosting": {
+      "model__min_samples_leaf": 10,
+      "model__max_leaf_nodes": 7,
+      "model__max_iter": 150,
+      "model__learning_rate": 0.03,
+      "model__l2_regularization": 0.0
+    }
+  },
+  "challenger": "HistGradientBoosting",
+  "calibration": "sigmoid",
+  "thresholds": {
+    "default": 0.5,
+    "balanced": 0.34,
+    "high_recall": 0.21,
+    "high_precision": 0.54,
+    "lowest_cost": 0.17,
+    "high_recall_precision_floor": 0.4493865030674847,
+    "high_precision_recall_floor": 0.4044478527607362
+  },
+  "decision": "C \u2014 CREATE V3 AND RECOMMEND PROMOTION",
+  "decision_reason": "PR-AUC CV gain is material and holdout confirms it",
+  "v3_created": true
+}
