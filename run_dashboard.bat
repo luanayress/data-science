@@ -88,7 +88,8 @@ echo Press Ctrl+C to stop the dashboard
 echo ============================================================
 echo.
 
-REM Launch Streamlit
-python -m streamlit run app.py
+REM Launch the FastAPI backend, then the Streamlit frontend
+start "Churn API" /B python -m uvicorn app.api:app --host 127.0.0.1 --port 8000
+python -m streamlit run app/app.py
 
 pause
